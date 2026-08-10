@@ -1,0 +1,561 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		013D990F522F86ED684A1C5A /* StructuredAnswerEditors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6ECC537360B26BB5FFAEB3 /* StructuredAnswerEditors.swift */; };
+		0B73BF081483C6F566010A56 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2AA616740315399915F7887 /* ContentView.swift */; };
+		0E6622C7E4555BF628A2BE04 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 05DAC8211EB0297CE71B6540 /* Assets.xcassets */; };
+		158A5A385FFD79CD9F83AF97 /* AccountingQuestionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9085FBF6F05C1CBA0DC93E4F /* AccountingQuestionKit */; };
+		25D91C2333FAEBDB203165F3 /* QuestionImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76703365EAF1ED8DD7B9A1DA /* QuestionImportService.swift */; };
+		2F4F6D1A4128EC9E0A0E99A3 /* DisplayNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 842191CE0FB132D55816CF73 /* DisplayNames.swift */; };
+		3860FBFCBAA719DBFAD0C09C /* LibraryPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F723B9C974B0F376909D3CC /* LibraryPersistence.swift */; };
+		40D8C4141DF7E8D239336463 /* QuestionEditors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C083E990DB5C5EF86573A59 /* QuestionEditors.swift */; };
+		451305531CBAE4DA4EAA1B60 /* QuestionSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D9B0FB742C4A5F1FED432F /* QuestionSidebar.swift */; };
+		652262820ECFA51D3FC08F99 /* ALL_FORMATS_SAMPLE.md in Resources */ = {isa = PBXBuildFile; fileRef = 94936E26711285FC61E34474 /* ALL_FORMATS_SAMPLE.md */; };
+		66274AC8F7699E20C7E040B5 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DDFECDCDEA09CAB59CC703EA /* Localizable.xcstrings */; };
+		715FF3327FFC6EDD943FE4FB /* AppStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FAC479054595F76150BCC11 /* AppStoreTests.swift */; };
+		87B5D39CB4C8832298F7ADEF /* SPREADSHEET_PRACTICE.md in Resources */ = {isa = PBXBuildFile; fileRef = 8F5C42400800CDC07D2E5515 /* SPREADSHEET_PRACTICE.md */; };
+		95B9779720B3BB900DBCFE5F /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5BBA1DD53E22D2D55961CC8 /* AppStore.swift */; };
+		9E1E8308B5A2AA7750730EA1 /* MarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53FD87C98B5176811344FAA /* MarkdownText.swift */; };
+		C306F5BD99E0FAB2D500FBEE /* QuestionInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8793842D10C308EAA8A92A47 /* QuestionInspectorView.swift */; };
+		D3D6CC91D163A12BEF104042 /* AccountingQuestionStudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9B8D620BFD8EA380C3B44A /* AccountingQuestionStudioApp.swift */; };
+		D773C3AA8B27B302A70859BB /* FocusedQuestionPart.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED430609CB8D2CEDB912BE76 /* FocusedQuestionPart.swift */; };
+		E4C3E04F750589157B98694E /* QuestionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7EC0DB88501055FC8324740 /* QuestionDetailView.swift */; };
+		F1BF1871EB780021BA5A629E /* AnswerFeedbackViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DEDB8D72A1A9B11048B0C7F /* AnswerFeedbackViews.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		4F78BF67F50DAC36C77A722D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 910EC7E8DF27148F83F95F8D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 904C2C18641F6661500FEAE6;
+			remoteInfo = AccountingQuestionStudio;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		05DAC8211EB0297CE71B6540 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0F9B8D620BFD8EA380C3B44A /* AccountingQuestionStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountingQuestionStudioApp.swift; sourceTree = "<group>"; };
+		18F3B3B0A78657290DC5208E /* AccountingQuestionKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AccountingQuestionKit; path = ../Shared/AccountingQuestionKit; sourceTree = SOURCE_ROOT; };
+		3C6ECC537360B26BB5FFAEB3 /* StructuredAnswerEditors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructuredAnswerEditors.swift; sourceTree = "<group>"; };
+		47D9B0FB742C4A5F1FED432F /* QuestionSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionSidebar.swift; sourceTree = "<group>"; };
+		5F16B2D2D7BA7B135E79A03B /* AccountingQuestionStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AccountingQuestionStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5FAC479054595F76150BCC11 /* AppStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreTests.swift; sourceTree = "<group>"; };
+		6C083E990DB5C5EF86573A59 /* QuestionEditors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionEditors.swift; sourceTree = "<group>"; };
+		76703365EAF1ED8DD7B9A1DA /* QuestionImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionImportService.swift; sourceTree = "<group>"; };
+		842191CE0FB132D55816CF73 /* DisplayNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayNames.swift; sourceTree = "<group>"; };
+		8793842D10C308EAA8A92A47 /* QuestionInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionInspectorView.swift; sourceTree = "<group>"; };
+		8ECA5AD668E77DB107B9BEF6 /* StatementStudio.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = StatementStudio.entitlements; sourceTree = "<group>"; };
+		8F5C42400800CDC07D2E5515 /* SPREADSHEET_PRACTICE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SPREADSHEET_PRACTICE.md; sourceTree = "<group>"; };
+		8F723B9C974B0F376909D3CC /* LibraryPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryPersistence.swift; sourceTree = "<group>"; };
+		94936E26711285FC61E34474 /* ALL_FORMATS_SAMPLE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ALL_FORMATS_SAMPLE.md; sourceTree = "<group>"; };
+		9DEDB8D72A1A9B11048B0C7F /* AnswerFeedbackViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerFeedbackViews.swift; sourceTree = "<group>"; };
+		CEEA729DD203965162B6DC66 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D2AA616740315399915F7887 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		D7EC0DB88501055FC8324740 /* QuestionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionDetailView.swift; sourceTree = "<group>"; };
+		DDFECDCDEA09CAB59CC703EA /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		DF498B525C0C74C0CF0D8000 /* AccountingQuestionStudioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AccountingQuestionStudioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E53FD87C98B5176811344FAA /* MarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownText.swift; sourceTree = "<group>"; };
+		ED430609CB8D2CEDB912BE76 /* FocusedQuestionPart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedQuestionPart.swift; sourceTree = "<group>"; };
+		F5BBA1DD53E22D2D55961CC8 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AB1CE6EFD8A5094C568BCA5C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				158A5A385FFD79CD9F83AF97 /* AccountingQuestionKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0A76F795DD71E26973DA65AC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				DDFECDCDEA09CAB59CC703EA /* Localizable.xcstrings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		5E73C49A5A2964D63C288814 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				F9DE5344ACE2C7E2BB55BDBA /* AccountingQuestionStudio */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		5F0F16D60E3FCE568FA2E3FE /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				5FAC479054595F76150BCC11 /* AppStoreTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		9B1E3A9C577469E7267F868E = {
+			isa = PBXGroup;
+			children = (
+				C416A963E3FEAEE93612CD0A /* AccountingQuestionSuite */,
+				CC5D735C12F2EC3D29FD701A /* Packages */,
+				5E73C49A5A2964D63C288814 /* Sources */,
+				5F0F16D60E3FCE568FA2E3FE /* Tests */,
+				E99BA08CDC7ABD4C9E2A81F5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A288B48D9839CBA74BD41A5A /* Samples */ = {
+			isa = PBXGroup;
+			children = (
+				94936E26711285FC61E34474 /* ALL_FORMATS_SAMPLE.md */,
+				8F5C42400800CDC07D2E5515 /* SPREADSHEET_PRACTICE.md */,
+			);
+			path = Samples;
+			sourceTree = "<group>";
+		};
+		C416A963E3FEAEE93612CD0A /* AccountingQuestionSuite */ = {
+			isa = PBXGroup;
+			children = (
+				A288B48D9839CBA74BD41A5A /* Samples */,
+			);
+			name = AccountingQuestionSuite;
+			path = ..;
+			sourceTree = "<group>";
+		};
+		CC5D735C12F2EC3D29FD701A /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				18F3B3B0A78657290DC5208E /* AccountingQuestionKit */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		E99BA08CDC7ABD4C9E2A81F5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5F16B2D2D7BA7B135E79A03B /* AccountingQuestionStudio.app */,
+				DF498B525C0C74C0CF0D8000 /* AccountingQuestionStudioTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F9DE5344ACE2C7E2BB55BDBA /* AccountingQuestionStudio */ = {
+			isa = PBXGroup;
+			children = (
+				0F9B8D620BFD8EA380C3B44A /* AccountingQuestionStudioApp.swift */,
+				9DEDB8D72A1A9B11048B0C7F /* AnswerFeedbackViews.swift */,
+				F5BBA1DD53E22D2D55961CC8 /* AppStore.swift */,
+				05DAC8211EB0297CE71B6540 /* Assets.xcassets */,
+				D2AA616740315399915F7887 /* ContentView.swift */,
+				842191CE0FB132D55816CF73 /* DisplayNames.swift */,
+				ED430609CB8D2CEDB912BE76 /* FocusedQuestionPart.swift */,
+				CEEA729DD203965162B6DC66 /* Info.plist */,
+				8F723B9C974B0F376909D3CC /* LibraryPersistence.swift */,
+				E53FD87C98B5176811344FAA /* MarkdownText.swift */,
+				D7EC0DB88501055FC8324740 /* QuestionDetailView.swift */,
+				6C083E990DB5C5EF86573A59 /* QuestionEditors.swift */,
+				76703365EAF1ED8DD7B9A1DA /* QuestionImportService.swift */,
+				8793842D10C308EAA8A92A47 /* QuestionInspectorView.swift */,
+				47D9B0FB742C4A5F1FED432F /* QuestionSidebar.swift */,
+				8ECA5AD668E77DB107B9BEF6 /* StatementStudio.entitlements */,
+				3C6ECC537360B26BB5FFAEB3 /* StructuredAnswerEditors.swift */,
+				0A76F795DD71E26973DA65AC /* Resources */,
+			);
+			path = AccountingQuestionStudio;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		67D954AC262894DCBE12489E /* AccountingQuestionStudioTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3E95AE8E1A9F5DA0F470E35F /* Build configuration list for PBXNativeTarget "AccountingQuestionStudioTests" */;
+			buildPhases = (
+				ADE803197CEC66ADD8CC7C3F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EDE9F6710223DDE6C2707225 /* PBXTargetDependency */,
+			);
+			name = AccountingQuestionStudioTests;
+			packageProductDependencies = (
+			);
+			productName = AccountingQuestionStudioTests;
+			productReference = DF498B525C0C74C0CF0D8000 /* AccountingQuestionStudioTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		904C2C18641F6661500FEAE6 /* AccountingQuestionStudio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BE81DA70EDFAA3214691E4C6 /* Build configuration list for PBXNativeTarget "AccountingQuestionStudio" */;
+			buildPhases = (
+				C4FB00D54FA7B616D3C85AB3 /* Sources */,
+				DF889B36705C5057B5DAECF8 /* Resources */,
+				AB1CE6EFD8A5094C568BCA5C /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AccountingQuestionStudio;
+			packageProductDependencies = (
+				9085FBF6F05C1CBA0DC93E4F /* AccountingQuestionKit */,
+			);
+			productName = AccountingQuestionStudio;
+			productReference = 5F16B2D2D7BA7B135E79A03B /* AccountingQuestionStudio.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		910EC7E8DF27148F83F95F8D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					904C2C18641F6661500FEAE6 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 238AA5355199FF322C4ECD48 /* Build configuration list for PBXProject "AccountingQuestionStudio" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 9B1E3A9C577469E7267F868E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D2978D105E4A4F3B22E8042F /* XCLocalSwiftPackageReference "../Shared/AccountingQuestionKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E99BA08CDC7ABD4C9E2A81F5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				904C2C18641F6661500FEAE6 /* AccountingQuestionStudio */,
+				67D954AC262894DCBE12489E /* AccountingQuestionStudioTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DF889B36705C5057B5DAECF8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				652262820ECFA51D3FC08F99 /* ALL_FORMATS_SAMPLE.md in Resources */,
+				0E6622C7E4555BF628A2BE04 /* Assets.xcassets in Resources */,
+				66274AC8F7699E20C7E040B5 /* Localizable.xcstrings in Resources */,
+				87B5D39CB4C8832298F7ADEF /* SPREADSHEET_PRACTICE.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		ADE803197CEC66ADD8CC7C3F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				715FF3327FFC6EDD943FE4FB /* AppStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C4FB00D54FA7B616D3C85AB3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3D6CC91D163A12BEF104042 /* AccountingQuestionStudioApp.swift in Sources */,
+				F1BF1871EB780021BA5A629E /* AnswerFeedbackViews.swift in Sources */,
+				95B9779720B3BB900DBCFE5F /* AppStore.swift in Sources */,
+				0B73BF081483C6F566010A56 /* ContentView.swift in Sources */,
+				2F4F6D1A4128EC9E0A0E99A3 /* DisplayNames.swift in Sources */,
+				D773C3AA8B27B302A70859BB /* FocusedQuestionPart.swift in Sources */,
+				3860FBFCBAA719DBFAD0C09C /* LibraryPersistence.swift in Sources */,
+				9E1E8308B5A2AA7750730EA1 /* MarkdownText.swift in Sources */,
+				E4C3E04F750589157B98694E /* QuestionDetailView.swift in Sources */,
+				40D8C4141DF7E8D239336463 /* QuestionEditors.swift in Sources */,
+				25D91C2333FAEBDB203165F3 /* QuestionImportService.swift in Sources */,
+				C306F5BD99E0FAB2D500FBEE /* QuestionInspectorView.swift in Sources */,
+				451305531CBAE4DA4EAA1B60 /* QuestionSidebar.swift in Sources */,
+				013D990F522F86ED684A1C5A /* StructuredAnswerEditors.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		EDE9F6710223DDE6C2707225 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 904C2C18641F6661500FEAE6 /* AccountingQuestionStudio */;
+			targetProxy = 4F78BF67F50DAC36C77A722D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		078C0EB34641AECAB7968A8E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/AccountingQuestionStudio/StatementStudio.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				INFOPLIST_FILE = Sources/AccountingQuestionStudio/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.accountingquestionsuite.mac;
+				PRODUCT_MODULE_NAME = AccountingQuestionStudio;
+				PRODUCT_NAME = "Statement Studio";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		451EEEFB62D4DE5738F91FF9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.accountingquestionsuite.mac.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Statement Studio.app/Contents/MacOS/Statement Studio";
+			};
+			name = Debug;
+		};
+		4A619E5C8A5F034BF4C757D7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/AccountingQuestionStudio/StatementStudio.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				INFOPLIST_FILE = Sources/AccountingQuestionStudio/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.accountingquestionsuite.mac;
+				PRODUCT_MODULE_NAME = AccountingQuestionStudio;
+				PRODUCT_NAME = "Statement Studio";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		715D09FDCD7443699179BBCC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A2CC6F89745F9FB2144CE353 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		C0881F7E1C54601C9B65B35A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.accountingquestionsuite.mac.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Statement Studio.app/Contents/MacOS/Statement Studio";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		238AA5355199FF322C4ECD48 /* Build configuration list for PBXProject "AccountingQuestionStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				715D09FDCD7443699179BBCC /* Debug */,
+				A2CC6F89745F9FB2144CE353 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3E95AE8E1A9F5DA0F470E35F /* Build configuration list for PBXNativeTarget "AccountingQuestionStudioTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				451EEEFB62D4DE5738F91FF9 /* Debug */,
+				C0881F7E1C54601C9B65B35A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BE81DA70EDFAA3214691E4C6 /* Build configuration list for PBXNativeTarget "AccountingQuestionStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A619E5C8A5F034BF4C757D7 /* Debug */,
+				078C0EB34641AECAB7968A8E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D2978D105E4A4F3B22E8042F /* XCLocalSwiftPackageReference "../Shared/AccountingQuestionKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Shared/AccountingQuestionKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9085FBF6F05C1CBA0DC93E4F /* AccountingQuestionKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AccountingQuestionKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 910EC7E8DF27148F83F95F8D /* Project object */;
+}

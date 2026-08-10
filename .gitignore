@@ -1,0 +1,28 @@
+# macOS
+**/.DS_Store
+
+# Rust
+**/target/
+
+# Swift Package Manager
+**/.build/
+**/.swiftpm/
+Package.resolved
+
+# Xcode
+**/DerivedData/
+**/.derivedData/
+**/xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.xcresult
+*.dSYM
+*.dSYM.zip
+*.hmap
+*.ipa
+
+# Build outputs — distribute these via GitHub Releases, not in the tree.
+# The compiled binaries embed local build paths, so they stay out of the repo.
+Builds/*
+!Builds/DELIVERY_MANIFEST.md

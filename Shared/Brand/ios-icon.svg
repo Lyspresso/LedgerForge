@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="124" y1="88" x2="904" y2="942" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35B7AC"/>
+      <stop offset="1" stop-color="#08706C"/>
+    </linearGradient>
+    <linearGradient id="coral" x1="412" y1="576" x2="730" y2="798" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF9A80"/>
+      <stop offset="1" stop-color="#E55046"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="226" fill="url(#bg)"/>
+  <path d="M252 182h422c70 0 126 56 126 126v530H346c-67 0-122-55-122-122V210c0-15 13-28 28-28Z" fill="#FFF8E9"/>
+  <path d="M674 182c70 0 126 56 126 126v530H674V182Z" fill="#EEE7D9"/>
+  <rect x="316" y="294" width="278" height="38" rx="19" fill="#087A75"/>
+  <rect x="316" y="396" width="390" height="26" rx="13" fill="#80A7A3"/>
+  <rect x="316" y="466" width="390" height="26" rx="13" fill="#80A7A3"/>
+  <rect x="316" y="536" width="242" height="26" rx="13" fill="#80A7A3"/>
+  <path d="m409 700 78 78 198-224" fill="none" stroke="url(#coral)" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="789" cy="218" r="60" fill="#FF8B73"/>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="140" y1="80" x2="880" y2="944" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#24313A"/>
+      <stop offset="1" stop-color="#10171C"/>
+    </linearGradient>
+    <linearGradient id="rust" x1="270" y1="230" x2="735" y2="820" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6A15F"/>
+      <stop offset="1" stop-color="#C85C2E"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <path d="M278 204h394c69 0 124 55 124 124v492H348c-66 0-120-54-120-120V254c0-28 22-50 50-50Z" fill="#F5F0E8"/>
+  <path d="M672 204c69 0 124 55 124 124v492H672V204Z" fill="#E9DED0"/>
+  <rect x="318" y="320" width="264" height="34" rx="17" fill="#26343C" opacity=".82"/>
+  <rect x="318" y="410" width="358" height="24" rx="12" fill="#82909A"/>
+  <rect x="318" y="472" width="358" height="24" rx="12" fill="#82909A"/>
+  <rect x="318" y="534" width="220" height="24" rx="12" fill="#82909A"/>
+  <path d="m437 690 70 70 178-198" fill="none" stroke="url(#rust)" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="777" cy="228" r="55" fill="#E4733D"/>
+</svg>

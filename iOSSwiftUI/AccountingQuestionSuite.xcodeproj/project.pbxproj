@@ -1,0 +1,612 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		049F468CA7BA992C030B0D15 /* AnswerEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C17F448E3A56D1E581B38AF /* AnswerEditing.swift */; };
+		08998637FD3228F7112B92FD /* QuestionStudyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E985B4E8BACFF58164208E6C /* QuestionStudyView.swift */; };
+		0ED16F162FC4DF57A725E999 /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8645989A19B9BA98650C148F /* AppShellView.swift */; };
+		157F73D2F7BF9B44FF123F4F /* BundledSampleLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B623855E97ACE0B2F48E8E63 /* BundledSampleLoader.swift */; };
+		22AEF3CD562B030370BD5017 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0431026F4F73176B738028 /* LibraryView.swift */; };
+		29BB2F8B891C4B9EA7EF32FF /* StudyExperienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7D0DC281B05C37A9B4DFBE /* StudyExperienceTests.swift */; };
+		2A8C320E98BB0B06A5856215 /* MarkdownDocumentImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C9CE9309C85BAD4BFCF02B /* MarkdownDocumentImporter.swift */; };
+		2D117A73C913C17F0D2AB92B /* SpreadsheetResponseEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363659667F3D981C9E2D8DF9 /* SpreadsheetResponseEditor.swift */; };
+		3EAF690D5B6786E7C1A64ECF /* JSONAppPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38108A7E574ACF19B5FB50A7 /* JSONAppPersistence.swift */; };
+		42F794AACB3D187E1DEDE754 /* ALL_FORMATS_SAMPLE.md in Resources */ = {isa = PBXBuildFile; fileRef = 4582CF15B8E5BDA69FF1FC2E /* ALL_FORMATS_SAMPLE.md */; };
+		518607A3F0BB09A7F4263F65 /* PersistenceAndImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1566EC83D1121B046C14891 /* PersistenceAndImportTests.swift */; };
+		529A634217010165D8722712 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A05E8C4EE18112EF710114FE /* Localizable.xcstrings */; };
+		536621CC7DF2B983BFAF1804 /* ResponseEditors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7D9B797246545EEC55454D /* ResponseEditors.swift */; };
+		630DB8A8E36484B4623F4A4D /* AppModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88F977ACD1BFC644EF68E3 /* AppModels.swift */; };
+		6E295A0F8BF43EB3542EA810 /* PresentationText.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84D51C2C9A7C559EB734EA5 /* PresentationText.swift */; };
+		7D596436CB3897ECF34A4986 /* StudyDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 960CFB2B2DFA7CC42AD5FF4E /* StudyDesignSystem.swift */; };
+		880EEFD1649A930FBC0CADC3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 15A602D1ECCEB7AEDA00D35C /* Assets.xcassets */; };
+		A40A9D47A8129A6B8A0A9D82 /* QuestionStudySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3B50D44F048D187118A062 /* QuestionStudySession.swift */; };
+		A94D4954B7674BA5A76484C3 /* AccountingQuestionSuiteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81DC32C6C5B210E06D6259CC /* AccountingQuestionSuiteApp.swift */; };
+		AAE6FA9E82E440BFE96A1C86 /* SPREADSHEET_PRACTICE.md in Resources */ = {isa = PBXBuildFile; fileRef = 84A94FB2DC8198E539F6F0D5 /* SPREADSHEET_PRACTICE.md */; };
+		B314518E28C698104D580530 /* AccountingQuestionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5791A8A936473B5369F0C07F /* AccountingQuestionKit */; };
+		B9EEEF73124782EF38D4AF0B /* AttemptsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A87D9DF35374E673CE01080 /* AttemptsView.swift */; };
+		D75EFFA2D280882F6E3704CF /* AccountingQuestionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B9C0E9D95FAE479355E1BC4 /* AccountingQuestionKit */; };
+		D84F6404D5AE4D42FF039B78 /* AccountingSuiteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 250C3BCCC17981BBCF1C0410 /* AccountingSuiteStore.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		15733F6B7F551D662CA11761 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9AB39004BA27AC6FF459AF2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7231B23B341637FD3A0AE11A;
+			remoteInfo = AccountingQuestionSuite;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		15A602D1ECCEB7AEDA00D35C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		24641FC89DE228AE84EBF131 /* AccountingQuestionKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AccountingQuestionKit; path = ../Shared/AccountingQuestionKit; sourceTree = SOURCE_ROOT; };
+		250C3BCCC17981BBCF1C0410 /* AccountingSuiteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountingSuiteStore.swift; sourceTree = "<group>"; };
+		2C0431026F4F73176B738028 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		2C17F448E3A56D1E581B38AF /* AnswerEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerEditing.swift; sourceTree = "<group>"; };
+		363659667F3D981C9E2D8DF9 /* SpreadsheetResponseEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpreadsheetResponseEditor.swift; sourceTree = "<group>"; };
+		38108A7E574ACF19B5FB50A7 /* JSONAppPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONAppPersistence.swift; sourceTree = "<group>"; };
+		3A87D9DF35374E673CE01080 /* AttemptsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttemptsView.swift; sourceTree = "<group>"; };
+		3C7D0DC281B05C37A9B4DFBE /* StudyExperienceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyExperienceTests.swift; sourceTree = "<group>"; };
+		4582CF15B8E5BDA69FF1FC2E /* ALL_FORMATS_SAMPLE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ALL_FORMATS_SAMPLE.md; sourceTree = "<group>"; };
+		642ED4411CF190EFE1A9D767 /* AccountingQuestionSuiteTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = AccountingQuestionSuiteTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		64C9CE9309C85BAD4BFCF02B /* MarkdownDocumentImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownDocumentImporter.swift; sourceTree = "<group>"; };
+		6B88F977ACD1BFC644EF68E3 /* AppModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModels.swift; sourceTree = "<group>"; };
+		81DC32C6C5B210E06D6259CC /* AccountingQuestionSuiteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountingQuestionSuiteApp.swift; sourceTree = "<group>"; };
+		84A94FB2DC8198E539F6F0D5 /* SPREADSHEET_PRACTICE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SPREADSHEET_PRACTICE.md; sourceTree = "<group>"; };
+		8645989A19B9BA98650C148F /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
+		960CFB2B2DFA7CC42AD5FF4E /* StudyDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyDesignSystem.swift; sourceTree = "<group>"; };
+		A05E8C4EE18112EF710114FE /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		AC7D9B797246545EEC55454D /* ResponseEditors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseEditors.swift; sourceTree = "<group>"; };
+		B03CE97496DF068E2185E5E9 /* AccountingQuestionSuite.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AccountingQuestionSuite.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B623855E97ACE0B2F48E8E63 /* BundledSampleLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledSampleLoader.swift; sourceTree = "<group>"; };
+		BB3B50D44F048D187118A062 /* QuestionStudySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionStudySession.swift; sourceTree = "<group>"; };
+		C84D51C2C9A7C559EB734EA5 /* PresentationText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationText.swift; sourceTree = "<group>"; };
+		E985B4E8BACFF58164208E6C /* QuestionStudyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionStudyView.swift; sourceTree = "<group>"; };
+		F1566EC83D1121B046C14891 /* PersistenceAndImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceAndImportTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2C8840939D923E7856B9B318 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B314518E28C698104D580530 /* AccountingQuestionKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0860232BA6BBC27041FF20B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D75EFFA2D280882F6E3704CF /* AccountingQuestionKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		05384358C77FE772B9434B78 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				15A602D1ECCEB7AEDA00D35C /* Assets.xcassets */,
+				A05E8C4EE18112EF710114FE /* Localizable.xcstrings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		10C583F90F53D99051ED081D /* App */ = {
+			isa = PBXGroup;
+			children = (
+				81DC32C6C5B210E06D6259CC /* AccountingQuestionSuiteApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		2427690DD59ED52133B5B0A1 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B623855E97ACE0B2F48E8E63 /* BundledSampleLoader.swift */,
+				38108A7E574ACF19B5FB50A7 /* JSONAppPersistence.swift */,
+				64C9CE9309C85BAD4BFCF02B /* MarkdownDocumentImporter.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		3F0988340E112E421A786471 = {
+			isa = PBXGroup;
+			children = (
+				8390943AD6F829C6223D4A65 /* AccountingQuestionSuite */,
+				6146BEDC1B5FBA776AAE1366 /* Packages */,
+				05384358C77FE772B9434B78 /* Resources */,
+				AD1C882C2D2EB07323322C78 /* Sources */,
+				6E780B04C0D8C68697512D25 /* Tests */,
+				5052ECE8943F59631D45245D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		424C1C95A68CF410C0AFEEBC /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				2C17F448E3A56D1E581B38AF /* AnswerEditing.swift */,
+				6B88F977ACD1BFC644EF68E3 /* AppModels.swift */,
+				BB3B50D44F048D187118A062 /* QuestionStudySession.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		5052ECE8943F59631D45245D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B03CE97496DF068E2185E5E9 /* AccountingQuestionSuite.app */,
+				642ED4411CF190EFE1A9D767 /* AccountingQuestionSuiteTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		606839051693987DCB36F102 /* Samples */ = {
+			isa = PBXGroup;
+			children = (
+				4582CF15B8E5BDA69FF1FC2E /* ALL_FORMATS_SAMPLE.md */,
+				84A94FB2DC8198E539F6F0D5 /* SPREADSHEET_PRACTICE.md */,
+			);
+			path = Samples;
+			sourceTree = "<group>";
+		};
+		6146BEDC1B5FBA776AAE1366 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				24641FC89DE228AE84EBF131 /* AccountingQuestionKit */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		6E780B04C0D8C68697512D25 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				F1566EC83D1121B046C14891 /* PersistenceAndImportTests.swift */,
+				3C7D0DC281B05C37A9B4DFBE /* StudyExperienceTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		6F751C5F684A7E58439D9BB9 /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				250C3BCCC17981BBCF1C0410 /* AccountingSuiteStore.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		8390943AD6F829C6223D4A65 /* AccountingQuestionSuite */ = {
+			isa = PBXGroup;
+			children = (
+				606839051693987DCB36F102 /* Samples */,
+			);
+			name = AccountingQuestionSuite;
+			path = ..;
+			sourceTree = "<group>";
+		};
+		AD1C882C2D2EB07323322C78 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				10C583F90F53D99051ED081D /* App */,
+				424C1C95A68CF410C0AFEEBC /* Models */,
+				2427690DD59ED52133B5B0A1 /* Services */,
+				6F751C5F684A7E58439D9BB9 /* Store */,
+				DF7AF565D2AE8A6CC8F49565 /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		DF7AF565D2AE8A6CC8F49565 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				8645989A19B9BA98650C148F /* AppShellView.swift */,
+				3A87D9DF35374E673CE01080 /* AttemptsView.swift */,
+				2C0431026F4F73176B738028 /* LibraryView.swift */,
+				C84D51C2C9A7C559EB734EA5 /* PresentationText.swift */,
+				E985B4E8BACFF58164208E6C /* QuestionStudyView.swift */,
+				AC7D9B797246545EEC55454D /* ResponseEditors.swift */,
+				363659667F3D981C9E2D8DF9 /* SpreadsheetResponseEditor.swift */,
+				960CFB2B2DFA7CC42AD5FF4E /* StudyDesignSystem.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		21D819EB226F17C4D3CC1A65 /* AccountingQuestionSuiteTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F9B9A17D62E74BB0716BA484 /* Build configuration list for PBXNativeTarget "AccountingQuestionSuiteTests" */;
+			buildPhases = (
+				C309EAE6AF299F8A4E909B13 /* Sources */,
+				2C8840939D923E7856B9B318 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5E3846379DE6F2B6176D881D /* PBXTargetDependency */,
+			);
+			name = AccountingQuestionSuiteTests;
+			packageProductDependencies = (
+				5791A8A936473B5369F0C07F /* AccountingQuestionKit */,
+			);
+			productName = AccountingQuestionSuiteTests;
+			productReference = 642ED4411CF190EFE1A9D767 /* AccountingQuestionSuiteTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		7231B23B341637FD3A0AE11A /* AccountingQuestionSuite */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7931F5E250F44FD2186DFA5C /* Build configuration list for PBXNativeTarget "AccountingQuestionSuite" */;
+			buildPhases = (
+				49D7796E652554029A5F1FD7 /* Sources */,
+				263378D20D58395D26242BE0 /* Resources */,
+				C0860232BA6BBC27041FF20B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AccountingQuestionSuite;
+			packageProductDependencies = (
+				0B9C0E9D95FAE479355E1BC4 /* AccountingQuestionKit */,
+			);
+			productName = AccountingQuestionSuite;
+			productReference = B03CE97496DF068E2185E5E9 /* AccountingQuestionSuite.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D9AB39004BA27AC6FF459AF2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					7231B23B341637FD3A0AE11A = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 4049BB35E08A178930197ECE /* Build configuration list for PBXProject "AccountingQuestionSuite" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3F0988340E112E421A786471;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A0E87D4A4F4A1430ACA62351 /* XCLocalSwiftPackageReference "../Shared/AccountingQuestionKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 5052ECE8943F59631D45245D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7231B23B341637FD3A0AE11A /* AccountingQuestionSuite */,
+				21D819EB226F17C4D3CC1A65 /* AccountingQuestionSuiteTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		263378D20D58395D26242BE0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42F794AACB3D187E1DEDE754 /* ALL_FORMATS_SAMPLE.md in Resources */,
+				880EEFD1649A930FBC0CADC3 /* Assets.xcassets in Resources */,
+				529A634217010165D8722712 /* Localizable.xcstrings in Resources */,
+				AAE6FA9E82E440BFE96A1C86 /* SPREADSHEET_PRACTICE.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		49D7796E652554029A5F1FD7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A94D4954B7674BA5A76484C3 /* AccountingQuestionSuiteApp.swift in Sources */,
+				D84F6404D5AE4D42FF039B78 /* AccountingSuiteStore.swift in Sources */,
+				049F468CA7BA992C030B0D15 /* AnswerEditing.swift in Sources */,
+				630DB8A8E36484B4623F4A4D /* AppModels.swift in Sources */,
+				0ED16F162FC4DF57A725E999 /* AppShellView.swift in Sources */,
+				B9EEEF73124782EF38D4AF0B /* AttemptsView.swift in Sources */,
+				157F73D2F7BF9B44FF123F4F /* BundledSampleLoader.swift in Sources */,
+				3EAF690D5B6786E7C1A64ECF /* JSONAppPersistence.swift in Sources */,
+				22AEF3CD562B030370BD5017 /* LibraryView.swift in Sources */,
+				2A8C320E98BB0B06A5856215 /* MarkdownDocumentImporter.swift in Sources */,
+				6E295A0F8BF43EB3542EA810 /* PresentationText.swift in Sources */,
+				A40A9D47A8129A6B8A0A9D82 /* QuestionStudySession.swift in Sources */,
+				08998637FD3228F7112B92FD /* QuestionStudyView.swift in Sources */,
+				536621CC7DF2B983BFAF1804 /* ResponseEditors.swift in Sources */,
+				2D117A73C913C17F0D2AB92B /* SpreadsheetResponseEditor.swift in Sources */,
+				7D596436CB3897ECF34A4986 /* StudyDesignSystem.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C309EAE6AF299F8A4E909B13 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				518607A3F0BB09A7F4263F65 /* PersistenceAndImportTests.swift in Sources */,
+				29BB2F8B891C4B9EA7EF32FF /* StudyExperienceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		5E3846379DE6F2B6176D881D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7231B23B341637FD3A0AE11A /* AccountingQuestionSuite */;
+			targetProxy = 15733F6B7F551D662CA11761 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3A40DBE521D79F5754293BCD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.accountingquestionsuite.ledgerpocket;
+				PRODUCT_MODULE_NAME = AccountingQuestionSuite;
+				PRODUCT_NAME = "Ledger Pocket";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		44268CD0D3E4ADDCDB1A79AA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.accountingquestionsuite.ledgerpocket.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Ledger Pocket.app/Ledger Pocket";
+			};
+			name = Release;
+		};
+		898DE5DD1088D080E297A736 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.accountingquestionsuite.ledgerpocket.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Ledger Pocket.app/Ledger Pocket";
+			};
+			name = Debug;
+		};
+		C9FABF8C76D01C9403BAC321 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.accountingquestionsuite.ledgerpocket;
+				PRODUCT_MODULE_NAME = AccountingQuestionSuite;
+				PRODUCT_NAME = "Ledger Pocket";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E8EA6D913EA6D48760183206 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		F00D1A7DF01A4E8ADF2C29B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4049BB35E08A178930197ECE /* Build configuration list for PBXProject "AccountingQuestionSuite" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E8EA6D913EA6D48760183206 /* Debug */,
+				F00D1A7DF01A4E8ADF2C29B7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7931F5E250F44FD2186DFA5C /* Build configuration list for PBXNativeTarget "AccountingQuestionSuite" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C9FABF8C76D01C9403BAC321 /* Debug */,
+				3A40DBE521D79F5754293BCD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F9B9A17D62E74BB0716BA484 /* Build configuration list for PBXNativeTarget "AccountingQuestionSuiteTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				898DE5DD1088D080E297A736 /* Debug */,
+				44268CD0D3E4ADDCDB1A79AA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A0E87D4A4F4A1430ACA62351 /* XCLocalSwiftPackageReference "../Shared/AccountingQuestionKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Shared/AccountingQuestionKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0B9C0E9D95FAE479355E1BC4 /* AccountingQuestionKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AccountingQuestionKit;
+		};
+		5791A8A936473B5369F0C07F /* AccountingQuestionKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AccountingQuestionKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = D9AB39004BA27AC6FF459AF2 /* Project object */;
+}

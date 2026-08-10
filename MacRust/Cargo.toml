@@ -1,0 +1,28 @@
+[package]
+name = "accounting-question-studio"
+version = "0.1.0"
+edition = "2024"
+description = "A native macOS study app for composable intermediate-accounting questions"
+license = "MIT"
+
+[lib]
+name = "accounting_question_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "accounting-question-studio"
+path = "src/main.rs"
+required-features = ["desktop"]
+
+[features]
+default = ["desktop"]
+desktop = ["dep:eframe", "dep:rfd"]
+
+[dependencies]
+eframe = { version = "0.35.0", optional = true, default-features = false, features = ["accesskit", "default_fonts", "glow"] }
+rfd = { version = "0.15.4", optional = true, default-features = false }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.19"
+
+[dev-dependencies]
