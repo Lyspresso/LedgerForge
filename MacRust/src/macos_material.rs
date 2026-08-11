@@ -66,18 +66,6 @@ struct GlassBatch {
     views: Vec<Retained<NSGlassEffectView>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-struct NativeMaterialSnapshot {
-    state: NativeMaterialState,
-    toolbar_regions: [Option<GlassRect>; TOOLBAR_GLASS_REGION_COUNT],
-    structural_regions: [Option<GlassRect>; STRUCTURAL_MATERIAL_REGION_COUNT],
-    navigation_regions: [Option<GlassRect>; 2],
-    viewport_width: f32,
-    viewport_height: f32,
-    renderer_bounds: [f64; 4],
-    renderer_is_flipped: bool,
-}
-
 #[derive(Debug, Default)]
 struct NativeNavigationState {
     button_rects: RefCell<[Option<NSRect>; 2]>,
@@ -110,7 +98,6 @@ pub struct SystemMaterial {
     toolbar_glass: Option<GlassBatch>,
     navigation_state: Rc<NativeNavigationState>,
     navigation_monitor: Option<Retained<AnyObject>>,
-    last_native_snapshot: Option<NativeMaterialSnapshot>,
     last_accessibility_poll: Option<Instant>,
     cached_state: NativeMaterialState,
 }
@@ -240,7 +227,6 @@ pub fn install_system_material(
         toolbar_glass,
         navigation_state,
         navigation_monitor,
-        last_native_snapshot: None,
         last_accessibility_poll: None,
         cached_state: NativeMaterialState::default(),
     })
@@ -404,26 +390,11 @@ impl SystemMaterial {
         state: NativeMaterialState,
     ) -> NativeMaterialState {
         let bounds = self.renderer_view.bounds();
-        let snapshot = NativeMaterialSnapshot {
-            state,
-            toolbar_regions,
-            structural_regions,
-            navigation_regions,
-            viewport_width,
-            viewport_height,
-            renderer_bounds: [
-                bounds.origin.x,
-                bounds.origin.y,
-                bounds.size.width,
-                bounds.size.height,
-            ],
-            renderer_is_flipped: self.renderer_view.isFlipped(),
-        };
-        if self.last_native_snapshot == Some(snapshot) {
-            return state;
-        }
-        self.last_native_snapshot = Some(snapshot);
-
+        // AppKit can rebuild titlebar material views while a unified toolbar
+        // settles, the window changes key state, or it returns from fullscreen.
+        // Keep these native effects synchronized on every rendered frame. A
+        // geometry-only cache freezes behind-window sampling and can leave the
+        // otherwise-transparent egui panes looking like flat fixed fills.
         let glass_visible = state.liquid_glass_visible;
         if let Some(batch) = &self.toolbar_glass {
             batch.container.setHidden(!glass_visible);

@@ -2052,7 +2052,7 @@ impl eframe::App for AccountingQuestionStudio {
             if let (Some(material), Some(state)) =
                 (self.system_material.as_mut(), native_material_state)
             {
-                material.update_native_materials(
+                let updated_state = material.update_native_materials(
                     toolbar_regions,
                     structural_regions,
                     navigation_regions,
@@ -2060,6 +2060,9 @@ impl eframe::App for AccountingQuestionStudio {
                     viewport.height(),
                     state,
                 );
+                if self.apply_native_material_state(updated_state) {
+                    root.ctx().request_repaint();
+                }
             }
         }
         #[cfg(not(target_os = "macos"))]
