@@ -105,8 +105,10 @@ private struct EditableAccountingGrid: View {
             }
 
             HStack(spacing: 12) {
-                Button(addButtonTitle, systemImage: "plus") {
+                Button {
                     addRow()
+                } label: {
+                    LocalizedSystemLabel(title: addButtonTitle, systemImage: "plus")
                 }
                 .controlSize(.small)
 
@@ -614,11 +616,13 @@ struct OrderingAnswerEditor: View {
                 )
             }
 
-            Button(
-                orderButtonTitle,
-                systemImage: orderButtonImage
-            ) {
+            Button {
                 answer.order = items.map(\.id)
+            } label: {
+                LocalizedSystemLabel(
+                    title: orderButtonTitle,
+                    systemImage: orderButtonImage
+                )
             }
             .controlSize(.small)
         }

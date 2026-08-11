@@ -129,11 +129,13 @@ private struct ActivePartInspectorSection: View {
                 }
                 .disabled(!store.canCheck(part: part, in: questionID))
 
-                Button(
-                    revealButtonTitle(isRevealed: isRevealed),
-                    systemImage: isRevealed ? "eye.slash" : "eye"
-                ) {
+                Button {
                     store.toggleReveal(partID: part.id, in: questionID)
+                } label: {
+                    LocalizedSystemLabel(
+                        title: revealButtonTitle(isRevealed: isRevealed),
+                        systemImage: isRevealed ? "eye.slash" : "eye"
+                    )
                 }
             }
 
