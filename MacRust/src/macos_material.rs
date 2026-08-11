@@ -6,7 +6,7 @@
 //! `NSGlassEffectView` instances provide Liquid Glass under the floating toolbar.
 //! We avoid undocumented material values and selectors entirely.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::ffi::CStr;
 use std::fmt;
@@ -19,10 +19,11 @@ use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject};
 use objc2::{MainThreadMarker, Message};
 use objc2_app_kit::{
-    NSAutoresizingMaskOptions, NSColor, NSEvent, NSEventMask, NSGlassEffectContainerView,
-    NSGlassEffectView, NSGlassEffectViewStyle, NSToolbar, NSToolbarDisplayMode, NSView,
-    NSVisualEffectBlendingMode, NSVisualEffectMaterial, NSVisualEffectState, NSVisualEffectView,
-    NSWindowOrderingMode, NSWindowToolbarStyle, NSWorkspace,
+    NSAutoresizingMaskOptions, NSColor, NSEvent, NSEventMask, NSEventType,
+    NSGlassEffectContainerView, NSGlassEffectView, NSGlassEffectViewStyle, NSToolbar,
+    NSToolbarDisplayMode, NSView, NSVisualEffectBlendingMode, NSVisualEffectMaterial,
+    NSVisualEffectState, NSVisualEffectView, NSWindowOrderingMode, NSWindowToolbarStyle,
+    NSWorkspace,
 };
 use objc2_foundation::{NSPoint, NSRect, NSSize};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
@@ -81,6 +82,21 @@ struct NativeMaterialSnapshot {
 struct NativeNavigationState {
     button_rects: RefCell<[Option<NSRect>; 2]>,
     pending: RefCell<VecDeque<isize>>,
+    press_active: Cell<bool>,
+}
+
+impl NativeNavigationState {
+    fn begin_press(&self, delta: isize) -> bool {
+        if self.press_active.replace(true) {
+            return false;
+        }
+        self.pending.borrow_mut().push_back(delta);
+        true
+    }
+
+    fn end_press(&self) {
+        self.press_active.set(false);
+    }
 }
 
 /// Owns native material views for the lifetime of the eframe window.
@@ -240,6 +256,10 @@ fn install_navigation_monitor(
             // SAFETY: AppKit invokes a local-monitor block with a valid NSEvent
             // pointer for the duration of the call.
             let event = unsafe { event_pointer.as_ref() };
+            if event.r#type() == NSEventType::LeftMouseUp {
+                navigation_state.end_press();
+                return event_pointer.as_ptr();
+            }
             if event.windowNumber() != window_number {
                 return event_pointer.as_ptr();
             }
@@ -251,7 +271,13 @@ fn install_navigation_monitor(
                 return event_pointer.as_ptr();
             };
 
-            navigation_state.pending.borrow_mut().push_back(delta);
+            // A physical click is one navigation action even if a synthetic
+            // driver or unusual pointing device repeats mouse-down events while
+            // the button remains held. The matching mouse-up re-arms the bridge.
+            if !navigation_state.begin_press(delta) {
+                return null_mut();
+            }
+
             egui_context.request_repaint_of(eframe::egui::ViewportId::ROOT);
 
             // This physical arrow press is now represented by the queued native
@@ -264,7 +290,10 @@ fn install_navigation_monitor(
     // SAFETY: the handler returns either the event pointer supplied by AppKit or
     // null for a handled navigation press, exactly as the API contract requires.
     unsafe {
-        NSEvent::addLocalMonitorForEventsMatchingMask_handler(NSEventMask::LeftMouseDown, &handler)
+        NSEvent::addLocalMonitorForEventsMatchingMask_handler(
+            NSEventMask::LeftMouseDown | NSEventMask::LeftMouseUp,
+            &handler,
+        )
     }
 }
 
@@ -577,7 +606,10 @@ fn material_state(
 
 #[cfg(test)]
 mod tests {
-    use super::{GlassRect, navigation_delta_at_point, renderer_space_rect, toolbar_corner_radius};
+    use super::{
+        GlassRect, NativeNavigationState, navigation_delta_at_point, renderer_space_rect,
+        toolbar_corner_radius,
+    };
     use objc2_foundation::{NSPoint, NSRect, NSSize};
 
     #[test]
@@ -623,6 +655,25 @@ mod tests {
         assert_eq!(
             navigation_delta_at_point(NSPoint::new(180.0, 716.0), regions),
             None
+        );
+    }
+
+    #[test]
+    fn native_navigation_enqueues_once_until_mouse_up() {
+        let state = NativeNavigationState::default();
+
+        assert!(state.begin_press(1));
+        assert!(!state.begin_press(1));
+        assert_eq!(
+            state.pending.borrow_mut().drain(..).collect::<Vec<_>>(),
+            [1]
+        );
+
+        state.end_press();
+        assert!(state.begin_press(-1));
+        assert_eq!(
+            state.pending.borrow_mut().drain(..).collect::<Vec<_>>(),
+            [-1]
         );
     }
 
