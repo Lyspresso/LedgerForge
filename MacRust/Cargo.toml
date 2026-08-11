@@ -1,7 +1,8 @@
 [package]
 name = "accounting-question-studio"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
+rust-version = "1.92"
 description = "A native macOS study app for composable intermediate-accounting questions"
 license = "MIT"
 

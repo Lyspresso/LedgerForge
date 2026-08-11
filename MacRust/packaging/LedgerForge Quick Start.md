@@ -46,7 +46,9 @@ Formula errors remain visible as `#VALUE!`, `#REF!`, `#DIV/0!`, or `#CYCLE!`.
 LedgerForge autosaves locally at:
 
 ```text
-~/Library/Application Support/com.openai.ledgerforge/state.json
+~/Library/Application Support/com.lyspresso.ledgerforge/state.json
 ```
 
 Its atomic recovery copy is `.state.json.backup` in the same folder. No cloud account is required.
+If the new location is empty, the first 1.0 launch copies pre-1.0 progress from
+`~/Library/Application Support/com.openai.ledgerforge/` and leaves the legacy files untouched.

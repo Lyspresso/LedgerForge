@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use accounting_question_core::{
-    AccountingQuestion, CellValue, GradeResult, GradeStatus, LibraryQuestion, PartGrade,
-    QuestionFormat, QuestionPart, QuestionProgress, QuestionShell, ResponseKind, StudentAnswer,
-    StudioModel, evaluate_formula, evaluate_grid,
+    APP_IDENTIFIER, AccountingQuestion, CellValue, GradeResult, GradeStatus, LibraryQuestion,
+    PartGrade, QuestionFormat, QuestionPart, QuestionProgress, QuestionShell, ResponseKind,
+    StudentAnswer, StudioModel, evaluate_formula, evaluate_grid,
 };
 use eframe::egui::{
     self, Align, Button, Color32, ComboBox, CornerRadius, FontData, FontDefinitions, FontFamily,
@@ -1567,7 +1567,7 @@ impl eframe::App for AccountingQuestionStudio {
 pub fn run() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_app_id("com.openai.ledgerforge")
+            .with_app_id(APP_IDENTIFIER)
             .with_title(APP_TITLE)
             .with_inner_size([1_180.0, 760.0])
             .with_min_inner_size([760.0, 540.0]),

@@ -159,6 +159,22 @@ impl JsonStateStore {
         &self.path
     }
 
+    /// Copy a prior installation's state into this store only when this store
+    /// has no primary or recovery file. The legacy files remain untouched so
+    /// an identifier migration is reversible.
+    pub fn migrate_if_missing_from(&self, legacy: &Self) -> Result<bool, StoreError> {
+        if self.path.exists() || backup_path_for(&self.path).exists() {
+            return Ok(false);
+        }
+        if !legacy.path.exists() && !backup_path_for(&legacy.path).exists() {
+            return Ok(false);
+        }
+
+        let loaded = legacy.load_with_recovery()?;
+        self.save(&loaded.state)?;
+        Ok(true)
+    }
+
     /// A missing state file means a clean first launch, not an error.
     pub fn load(&self) -> Result<AppState, StoreError> {
         self.load_with_recovery().map(|loaded| loaded.state)
@@ -385,9 +401,32 @@ mod tests {
     }
 
     #[test]
-    fn missing_file_loads_clean_first_launch_state() {
+    fn missing_file_loads_clean_state_and_can_migrate_legacy_state() {
         let store = temporary_test_store("missing");
         assert_eq!(store.load().unwrap(), AppState::default());
+
+        let root = std::env::temp_dir().join(format!(
+            "ledgerforge-identifier-migration-{}",
+            new_local_id("test")
+        ));
+        let legacy = JsonStateStore::new(root.join("legacy/state.json"));
+        let current = JsonStateStore::new(root.join("current/state.json"));
+        let mut legacy_state = AppState::default();
+        legacy_state.preferences.last_question_id = Some("kept-progress".to_owned());
+        legacy.save(&legacy_state).unwrap();
+
+        assert!(current.migrate_if_missing_from(&legacy).unwrap());
+        assert_eq!(current.load().unwrap(), legacy_state);
+        assert_eq!(legacy.load().unwrap(), legacy_state);
+        assert!(legacy.path().exists());
+
+        let mut current_state = legacy_state.clone();
+        current_state.preferences.last_question_id = Some("current-wins".to_owned());
+        current.save(&current_state).unwrap();
+        assert!(!current.migrate_if_missing_from(&legacy).unwrap());
+        assert_eq!(current.load().unwrap(), current_state);
+
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

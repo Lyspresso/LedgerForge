@@ -46,9 +46,9 @@ trap cleanup EXIT HUP INT TERM
 cd "$PROJECT_DIR"
 
 cargo fmt --check
-cargo test --offline --all-targets
-cargo clippy --offline --all-targets -- -D warnings
-MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release --offline
+cargo test --locked --all-targets
+cargo clippy --locked --all-targets -- -D warnings
+MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release --locked
 
 mkdir -p "$TEMP_APP/Contents/MacOS" "$TEMP_APP/Contents/Resources/Practice Packs" "$ICONSET"
 ditto "$RELEASE_BINARY" "$TEMP_APP/Contents/MacOS/LedgerForge"
@@ -75,7 +75,7 @@ SWIFT_MODULECACHE_PATH="$WORK_DIR/swift-module-cache" \
 swift "$ICNS_BUILDER" "$ICONSET" "$TEMP_APP/Contents/Resources/LedgerForge.icns"
 
 plutil -lint "$TEMP_APP/Contents/Info.plist"
-test "$(plutil -extract CFBundleIdentifier raw "$TEMP_APP/Contents/Info.plist")" = "com.openai.ledgerforge"
+test "$(plutil -extract CFBundleIdentifier raw "$TEMP_APP/Contents/Info.plist")" = "com.lyspresso.ledgerforge"
 test "$(plutil -extract CFBundleExecutable raw "$TEMP_APP/Contents/Info.plist")" = "LedgerForge"
 test "$(plutil -extract LSMinimumSystemVersion raw "$TEMP_APP/Contents/Info.plist")" = "11.0"
 test "$(lipo -archs "$TEMP_APP/Contents/MacOS/LedgerForge")" = "arm64"

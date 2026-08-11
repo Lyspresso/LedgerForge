@@ -4,7 +4,11 @@ Validation date: 2026-08-10
 
 The shared Markdown parser and validator were exercised against the bundled samples and both supplied ACCOUNT343 banks.
 
-The ACCOUNT343 banks are private course material and are **not** included in this repository. Only their import statistics are reported here. The test harnesses that read them (`MacRust/tests/supplied_bank_qa.rs`, `MacSwiftUI/Tests/AppStoreTests.swift`) skip themselves unless you set the corresponding environment variable to a bank file of your own.
+The ACCOUNT343 banks are private course material and are **not** included in this repository. Only
+their import statistics are reported here. The two Rust tests in
+`MacRust/tests/supplied_bank_qa.rs` are ignored by the normal test suite; when explicitly run with
+`--ignored`, each requires its documented `LEDGERFORGE_QA_*` path. The optional test in
+`MacSwiftUI/Tests/AppStoreTests.swift` skips itself when its authorized local fixtures are absent.
 
 | Source | Question items | Answerable parts | Import warnings | Authoring issues |
 |---|---:|---:|---:|---:|

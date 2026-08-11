@@ -1,0 +1,92 @@
+name: Bug report
+description: Report reproducible behavior that is incorrect or broken
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the suite. For security or privacy vulnerabilities, stop here and use the private reporting link in `SECURITY.md`.
+
+  - type: dropdown
+    id: application
+    attributes:
+      label: Application
+      options:
+        - LedgerForge (Rust macOS)
+        - Statement Studio (SwiftUI macOS)
+        - Ledger Pocket (iOS/iPadOS)
+        - Shared Markdown/import/grading behavior
+        - Documentation or packaging
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Use the release version or full commit SHA when possible.
+      placeholder: v1.0.0 or 0123456789abcdef...
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the Mac/iPhone/iPad model, OS version, CPU architecture, and Xcode or Rust version when relevant.
+      placeholder: macOS 15.6, Apple silicon, release app
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Give the smallest reliable sequence that reproduces the problem.
+      placeholder: |
+        1. Open ...
+        2. Import ...
+        3. Select ...
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include sanitized logs or screenshots if they clarify the result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: sample
+    attributes:
+      label: Minimal question sample
+      description: If import or grading is involved, paste a small original Markdown fixture. Do not upload publisher material, private course banks, answer keys, or student data.
+      render: markdown
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Include workarounds, frequency, regression information, or sanitized crash output.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I searched existing issues for this behavior.
+          required: true
+        - label: I removed private course content, student data, credentials, usernames, and local filesystem paths.
+          required: true
+        - label: This is not a security vulnerability; security reports belong in GitHub private vulnerability reporting.
+          required: true
