@@ -13,6 +13,8 @@ use eframe::egui::{
     RichText, ScrollArea, Sense, Shadow, Stroke, TextEdit, TextStyle, Theme, ThemePreference,
     UiBuilder, Vec2, WidgetInfo, WidgetType,
 };
+#[cfg(target_os = "macos")]
+use raw_window_handle::HasWindowHandle as _;
 
 const APP_TITLE: &str = "LedgerForge — Accounting Question Studio";
 
@@ -41,61 +43,69 @@ struct Palette {
 }
 
 impl Palette {
-    fn for_dark(dark: bool) -> Self {
+    fn for_dark(dark: bool, translucent: bool) -> Self {
         if dark {
             Self {
-                canvas: Color32::from_rgb(28, 28, 30),
-                sidebar: Color32::from_rgb(36, 36, 38),
-                toolbar: Color32::from_rgb(43, 43, 45),
-                card: Color32::from_rgb(44, 44, 46),
-                raised: Color32::from_rgb(56, 56, 58),
-                hover: Color32::from_rgb(64, 64, 67),
-                stroke: Color32::from_rgb(72, 72, 74),
-                text: Color32::from_rgb(245, 245, 247),
-                muted: Color32::from_rgb(161, 161, 166),
+                canvas: rgba_or_rgb(33, 34, 45, 242, translucent),
+                sidebar: rgba_or_rgb(36, 39, 59, 216, translucent),
+                toolbar: rgba_or_rgb(39, 41, 65, 194, translucent),
+                card: rgba_or_rgb(33, 34, 45, 238, translucent),
+                raised: rgba_or_rgb(255, 255, 255, 18, translucent),
+                hover: rgba_or_rgb(255, 255, 255, 28, translucent),
+                stroke: Color32::from_rgba_unmultiplied(255, 255, 255, 32),
+                text: Color32::from_rgb(221, 221, 223),
+                muted: Color32::from_rgb(163, 163, 171),
                 accent: Color32::from_rgb(10, 132, 255),
-                accent_soft: Color32::from_rgb(25, 57, 91),
+                accent_soft: Color32::from_rgba_unmultiplied(10, 132, 255, 31),
                 on_accent: Color32::WHITE,
-                shadow: Color32::from_rgba_premultiplied(0, 0, 0, 70),
+                shadow: Color32::from_rgba_unmultiplied(0, 0, 0, 9),
                 green: Color32::from_rgb(48, 209, 88),
-                green_soft: Color32::from_rgb(28, 68, 39),
+                green_soft: Color32::from_rgba_unmultiplied(48, 209, 88, 25),
                 amber: Color32::from_rgb(255, 159, 10),
-                amber_soft: Color32::from_rgb(77, 54, 19),
+                amber_soft: Color32::from_rgba_unmultiplied(255, 159, 10, 24),
                 red: Color32::from_rgb(255, 69, 58),
-                red_soft: Color32::from_rgb(77, 35, 32),
+                red_soft: Color32::from_rgba_unmultiplied(255, 69, 58, 23),
                 blue: Color32::from_rgb(100, 210, 255),
             }
         } else {
             Self {
-                canvas: Color32::from_rgb(248, 248, 250),
-                sidebar: Color32::from_rgb(242, 242, 244),
-                toolbar: Color32::from_rgb(247, 247, 248),
-                card: Color32::WHITE,
-                raised: Color32::from_rgb(242, 242, 247),
-                hover: Color32::from_rgb(231, 231, 235),
-                stroke: Color32::from_rgb(216, 216, 220),
+                canvas: rgba_or_rgb(248, 248, 250, 246, translucent),
+                sidebar: rgba_or_rgb(246, 246, 249, 218, translucent),
+                toolbar: rgba_or_rgb(249, 249, 252, 196, translucent),
+                card: rgba_or_rgb(248, 248, 250, 241, translucent),
+                raised: rgba_or_rgb(118, 118, 128, 18, translucent),
+                hover: rgba_or_rgb(118, 118, 128, 28, translucent),
+                stroke: Color32::from_rgba_unmultiplied(60, 60, 67, 32),
                 text: Color32::from_rgb(29, 29, 31),
                 muted: Color32::from_rgb(110, 110, 115),
                 accent: Color32::from_rgb(0, 122, 255),
-                accent_soft: Color32::from_rgb(220, 236, 255),
+                accent_soft: Color32::from_rgba_unmultiplied(0, 122, 255, 31),
                 on_accent: Color32::WHITE,
-                shadow: Color32::from_rgba_premultiplied(0, 0, 0, 18),
+                shadow: Color32::from_rgba_unmultiplied(0, 0, 0, 9),
                 green: Color32::from_rgb(40, 160, 70),
-                green_soft: Color32::from_rgb(226, 247, 231),
+                green_soft: Color32::from_rgba_unmultiplied(40, 160, 70, 22),
                 amber: Color32::from_rgb(196, 112, 0),
-                amber_soft: Color32::from_rgb(255, 241, 214),
+                amber_soft: Color32::from_rgba_unmultiplied(196, 112, 0, 20),
                 red: Color32::from_rgb(215, 48, 39),
-                red_soft: Color32::from_rgb(255, 229, 227),
+                red_soft: Color32::from_rgba_unmultiplied(215, 48, 39, 20),
                 blue: Color32::from_rgb(0, 122, 255),
             }
         }
     }
 }
 
+fn rgba_or_rgb(red: u8, green: u8, blue: u8, alpha: u8, translucent: bool) -> Color32 {
+    if translucent {
+        Color32::from_rgba_unmultiplied(red, green, blue, alpha)
+    } else {
+        Color32::from_rgb(red, green, blue)
+    }
+}
+
 fn subtle_card_shadow(palette: Palette) -> Shadow {
     Shadow {
         offset: [0, 3],
-        blur: 10,
+        blur: 8,
         spread: 0,
         color: palette.shadow,
     }
@@ -110,33 +120,189 @@ fn semantic_glyph_button(
     response
 }
 
+#[derive(Debug, Clone, Copy)]
+enum ToolbarGlyph {
+    Sidebar,
+    Previous,
+    Next,
+    Check,
+    Reveal,
+    Import,
+    Inspector,
+}
+
+fn toolbar_glyph_button(
+    ui: &mut egui::Ui,
+    glyph: ToolbarGlyph,
+    enabled: bool,
+    label: &'static str,
+    palette: Palette,
+) -> egui::Response {
+    let response = semantic_glyph_button(
+        ui.add_enabled(
+            enabled,
+            Button::new("").frame(false).min_size(Vec2::new(32.0, 32.0)),
+        ),
+        enabled,
+        label,
+    );
+    let color = if enabled {
+        if response.hovered() {
+            palette.text
+        } else {
+            palette.muted
+        }
+    } else {
+        palette.muted.gamma_multiply(0.45)
+    };
+    paint_toolbar_glyph(ui.painter(), response.rect.shrink(8.0), glyph, color);
+    response
+}
+
+fn paint_toolbar_glyph(
+    painter: &egui::Painter,
+    rect: egui::Rect,
+    glyph: ToolbarGlyph,
+    color: Color32,
+) {
+    let center = rect.center();
+    let stroke = Stroke::new(1.55, color);
+    match glyph {
+        ToolbarGlyph::Sidebar | ToolbarGlyph::Inspector => {
+            painter.rect_stroke(rect, 2.5, stroke, egui::StrokeKind::Inside);
+            let x = if matches!(glyph, ToolbarGlyph::Sidebar) {
+                rect.left() + rect.width() * 0.38
+            } else {
+                rect.right() - rect.width() * 0.38
+            };
+            painter.line_segment(
+                [egui::pos2(x, rect.top()), egui::pos2(x, rect.bottom())],
+                stroke,
+            );
+        }
+        ToolbarGlyph::Previous | ToolbarGlyph::Next => {
+            let direction = if matches!(glyph, ToolbarGlyph::Previous) {
+                -1.0
+            } else {
+                1.0
+            };
+            let tip = egui::pos2(center.x + direction * 3.0, center.y);
+            let tail_x = center.x - direction * 2.5;
+            painter.add(egui::Shape::line(
+                vec![
+                    egui::pos2(tail_x, center.y - 5.0),
+                    tip,
+                    egui::pos2(tail_x, center.y + 5.0),
+                ],
+                Stroke::new(1.9, color),
+            ));
+        }
+        ToolbarGlyph::Check => {
+            painter.circle_stroke(center, 6.5, stroke);
+            painter.add(egui::Shape::line(
+                vec![
+                    egui::pos2(center.x - 3.3, center.y),
+                    egui::pos2(center.x - 0.7, center.y + 2.7),
+                    egui::pos2(center.x + 4.0, center.y - 3.1),
+                ],
+                stroke,
+            ));
+        }
+        ToolbarGlyph::Reveal => {
+            let points = vec![
+                egui::pos2(rect.left(), center.y),
+                egui::pos2(center.x - 3.2, center.y - 4.0),
+                egui::pos2(center.x + 3.2, center.y - 4.0),
+                egui::pos2(rect.right(), center.y),
+                egui::pos2(center.x + 3.2, center.y + 4.0),
+                egui::pos2(center.x - 3.2, center.y + 4.0),
+                egui::pos2(rect.left(), center.y),
+            ];
+            painter.add(egui::Shape::line(points, stroke));
+            painter.circle_filled(center, 2.2, color);
+        }
+        ToolbarGlyph::Import => {
+            painter.add(egui::Shape::line(
+                vec![
+                    egui::pos2(rect.left() + 1.0, center.y + 1.0),
+                    egui::pos2(rect.left() + 1.0, rect.bottom() - 1.0),
+                    egui::pos2(rect.right() - 1.0, rect.bottom() - 1.0),
+                    egui::pos2(rect.right() - 1.0, center.y + 1.0),
+                ],
+                stroke,
+            ));
+            painter.line_segment(
+                [
+                    egui::pos2(center.x, rect.top()),
+                    egui::pos2(center.x, center.y + 3.0),
+                ],
+                stroke,
+            );
+            painter.add(egui::Shape::line(
+                vec![
+                    egui::pos2(center.x - 3.5, rect.top() + 3.5),
+                    egui::pos2(center.x, rect.top()),
+                    egui::pos2(center.x + 3.5, rect.top() + 3.5),
+                ],
+                stroke,
+            ));
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct AccountingQuestionStudio {
     model: StudioModel,
     active_part: usize,
     revealed_parts: HashSet<String>,
     review_visible: bool,
+    library_visible: bool,
+    study_settings_expanded: bool,
     filters_expanded: bool,
     search_focus_requested: bool,
+    library_scroll_to_selection: bool,
     flash_message: Option<String>,
+    native_material_active: bool,
+    traffic_lights_width: f32,
 }
 
 impl AccountingQuestionStudio {
     fn new(creation_context: &eframe::CreationContext<'_>) -> Self {
-        configure_theme(&creation_context.egui_ctx);
+        #[cfg(target_os = "macos")]
+        let native_material_active =
+            crate::macos_material::install_system_backdrop(creation_context).is_ok();
+        #[cfg(not(target_os = "macos"))]
+        let native_material_active = false;
+
+        #[cfg(target_os = "macos")]
+        let traffic_lights_width = creation_context
+            .window_handle()
+            .ok()
+            .and_then(|handle| eframe::WindowChromeMetrics::from_window_handle(&handle.as_raw()))
+            .map(|metrics| metrics.traffic_lights_size.x / creation_context.egui_ctx.zoom_factor())
+            .unwrap_or(76.0);
+        #[cfg(not(target_os = "macos"))]
+        let traffic_lights_width = 12.0;
+
+        configure_theme(&creation_context.egui_ctx, native_material_active);
         Self {
             model: StudioModel::load_standard(),
             active_part: 0,
             revealed_parts: HashSet::new(),
             review_visible: true,
+            library_visible: true,
+            study_settings_expanded: false,
             filters_expanded: false,
             search_focus_requested: false,
+            library_scroll_to_selection: true,
             flash_message: None,
+            native_material_active,
+            traffic_lights_width,
         }
     }
 
     fn palette(&self, ui: &egui::Ui) -> Palette {
-        Palette::for_dark(ui.visuals().dark_mode)
+        Palette::for_dark(ui.visuals().dark_mode, self.native_material_active)
     }
 
     fn handle_shortcuts(&mut self, ctx: &egui::Context) {
@@ -309,6 +475,7 @@ impl AccountingQuestionStudio {
         let item = &questions[index];
         self.model.select_question(&item.pack_id, &item.question_id);
         self.active_part = 0;
+        self.library_scroll_to_selection = true;
     }
 
     fn handle_dropped_files(&mut self, ctx: &egui::Context) {
@@ -336,6 +503,9 @@ impl AccountingQuestionStudio {
     fn show_toolbar(&mut self, ui: &mut egui::Ui) {
         let palette = self.palette(ui);
         let active = self.active_question_and_part();
+        let navigation_title = active
+            .as_ref()
+            .map_or("LedgerForge", |(question, _)| question.title.as_str());
         let selected_pack_id = self.model.selected_pack_id.clone();
         let active_key = selected_pack_id
             .as_deref()
@@ -358,159 +528,195 @@ impl AccountingQuestionStudio {
                 self.model.can_check_part(pack_id, &question.id, &part.id)
             });
 
+        let total_width = ui.available_width();
+        let search_width = (total_width * 0.23).clamp(160.0, 320.0);
+        let title_width =
+            (total_width - self.traffic_lights_width - search_width - 292.0).clamp(80.0, 520.0);
+
         ui.horizontal_centered(|ui| {
+            ui.add_space(self.traffic_lights_width + 2.0);
+
             Frame::new()
                 .fill(palette.raised)
                 .stroke(Stroke::new(1.0, palette.stroke))
-                .corner_radius(7)
+                .corner_radius(18)
+                .inner_margin(2)
+                .show(ui, |ui| {
+                    if toolbar_glyph_button(
+                        ui,
+                        ToolbarGlyph::Sidebar,
+                        true,
+                        "Toggle Question Library",
+                        palette,
+                    )
+                    .on_hover_text(if self.library_visible {
+                        "Hide question library"
+                    } else {
+                        "Show question library"
+                    })
+                    .clicked()
+                    {
+                        self.library_visible = !self.library_visible;
+                    }
+                });
+
+            ui.add_space(8.0);
+            ui.add_sized(
+                [title_width, 32.0],
+                Label::new(
+                    RichText::new(navigation_title)
+                        .size(13.0)
+                        .strong()
+                        .color(palette.text),
+                )
+                .truncate(),
+            );
+
+            Frame::new()
+                .fill(palette.raised)
+                .stroke(Stroke::new(1.0, palette.stroke))
+                .corner_radius(18)
+                .inner_margin(2)
                 .show(ui, |ui| {
                     ui.spacing_mut().item_spacing.x = 0.0;
-                    if semantic_glyph_button(
-                        ui.add_sized(
-                            [32.0, 28.0],
-                            Button::new(RichText::new("‹").size(19.0)).frame(false),
-                        ),
+                    if toolbar_glyph_button(
+                        ui,
+                        ToolbarGlyph::Previous,
                         true,
                         "Previous Question",
+                        palette,
                     )
                     .on_hover_text("Previous question (⌘[)")
                     .clicked()
                     {
                         self.select_question_delta(-1);
                     }
-                    if semantic_glyph_button(
-                        ui.add_sized(
-                            [32.0, 28.0],
-                            Button::new(RichText::new("›").size(19.0)).frame(false),
-                        ),
-                        true,
-                        "Next Question",
-                    )
-                    .on_hover_text("Next question (⌘])")
-                    .clicked()
+                    if toolbar_glyph_button(ui, ToolbarGlyph::Next, true, "Next Question", palette)
+                        .on_hover_text("Next question (⌘])")
+                        .clicked()
                     {
                         self.select_question_delta(1);
                     }
                 });
 
             ui.add_space(4.0);
-            ui.label(
-                RichText::new("LedgerForge")
-                    .size(13.0)
-                    .strong()
-                    .color(palette.muted),
-            );
+            Frame::new()
+                .fill(palette.raised)
+                .stroke(Stroke::new(1.0, palette.stroke))
+                .corner_radius(18)
+                .inner_margin(2)
+                .show(ui, |ui| {
+                    ui.spacing_mut().item_spacing.x = 0.0;
+                    if toolbar_glyph_button(
+                        ui,
+                        ToolbarGlyph::Check,
+                        has_part && can_check && !checked,
+                        "Check Response",
+                        palette,
+                    )
+                    .on_hover_text(if checked {
+                        "Response checked; edit it to check again"
+                    } else if !can_check {
+                        "Enter a response before checking"
+                    } else {
+                        "Check the current response (⌘Return)"
+                    })
+                    .clicked()
+                    {
+                        self.check_active_part();
+                    }
+                    if toolbar_glyph_button(
+                        ui,
+                        ToolbarGlyph::Reveal,
+                        has_part,
+                        "Toggle Model Answer",
+                        palette,
+                    )
+                    .on_hover_text(if revealed {
+                        "Hide the current model answer (⌘⇧R)"
+                    } else {
+                        "Reveal the current model answer (⌘⇧R)"
+                    })
+                    .clicked()
+                    {
+                        self.toggle_active_reveal();
+                    }
+                    if toolbar_glyph_button(
+                        ui,
+                        ToolbarGlyph::Import,
+                        true,
+                        "Import Markdown",
+                        palette,
+                    )
+                    .on_hover_text("Import Markdown question packs (⌘O)")
+                    .clicked()
+                    {
+                        self.import_with_picker();
+                    }
+                    if toolbar_glyph_button(
+                        ui,
+                        ToolbarGlyph::Inspector,
+                        true,
+                        "Toggle Inspector",
+                        palette,
+                    )
+                    .on_hover_text(if self.review_visible {
+                        "Hide inspector (⌘I)"
+                    } else {
+                        "Show inspector (⌘I)"
+                    })
+                    .clicked()
+                    {
+                        self.review_visible = !self.review_visible;
+                    }
+                });
 
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                let search_response = ui
-                    .add_sized(
-                        [230.0, 28.0],
+            ui.add_space(4.0);
+            let search_response = Frame::new()
+                .fill(palette.raised)
+                .stroke(Stroke::new(1.0, palette.stroke))
+                .corner_radius(18)
+                .inner_margin(Margin::symmetric(10, 2))
+                .show(ui, |ui| {
+                    ui.add_sized(
+                        [search_width - 20.0, 30.0],
                         TextEdit::singleline(&mut self.model.search)
                             .id_salt("library_search")
                             .hint_text("Search questions")
-                            .margin(Margin::symmetric(8, 5)),
+                            .frame(Frame::NONE)
+                            .margin(Margin::symmetric(0, 5)),
                     )
-                    .on_hover_text("Search titles, tags, scenarios, and formats (⌘F)");
-                if self.search_focus_requested {
-                    search_response.request_focus();
-                    self.search_focus_requested = false;
-                }
-                if semantic_glyph_button(
-                    ui.add_sized(
-                        [34.0, 30.0],
-                        Button::new(RichText::new("▥").size(16.0)).frame(false),
-                    ),
-                    true,
-                    "Toggle Inspector",
-                )
-                .on_hover_text(if self.review_visible {
-                    "Hide inspector (⌘I)"
-                } else {
-                    "Show inspector (⌘I)"
                 })
-                .clicked()
-                {
-                    self.review_visible = !self.review_visible;
-                }
-                if semantic_glyph_button(
-                    ui.add_sized(
-                        [34.0, 30.0],
-                        Button::new(RichText::new("⇩").size(17.0)).frame(false),
-                    ),
-                    true,
-                    "Import Markdown",
-                )
-                .on_hover_text("Import Markdown question packs (⌘O)")
-                .clicked()
-                {
-                    self.import_with_picker();
-                }
-                if semantic_glyph_button(
-                    ui.add_enabled(
-                        has_part,
-                        Button::new(if revealed { "◉" } else { "◎" }).frame(false),
-                    ),
-                    has_part,
-                    "Toggle Model Answer",
-                )
-                .on_hover_text(if revealed {
-                    "Hide the current model answer (⌘⇧R)"
-                } else {
-                    "Reveal the current model answer (⌘⇧R)"
-                })
-                .clicked()
-                {
-                    self.toggle_active_reveal();
-                }
-                if semantic_glyph_button(
-                    ui.add_enabled(
-                        has_part && can_check && !checked,
-                        Button::new(RichText::new("✓").size(16.0)).frame(false),
-                    ),
-                    has_part && can_check && !checked,
-                    "Check Response",
-                )
-                .on_hover_text(if checked {
-                    "Response checked; edit it to check again"
-                } else if !can_check {
-                    "Enter a response before checking"
-                } else {
-                    "Check the current response (⌘Return)"
-                })
-                .clicked()
-                {
-                    self.check_active_part();
-                }
-            });
+                .inner
+                .on_hover_text("Search titles, tags, scenarios, and formats (⌘F)");
+            if self.search_focus_requested {
+                search_response.request_focus();
+                self.search_focus_requested = false;
+            }
         });
     }
 
     fn show_library(&mut self, ui: &mut egui::Ui) {
         let palette = self.palette(ui);
-        ui.horizontal(|ui| {
-            ui.label(RichText::new("Question Library").size(17.0).strong());
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                ui.label(
-                    RichText::new(self.model.filtered_questions().len().to_string())
-                        .size(11.0)
-                        .monospace()
-                        .color(palette.muted),
-                );
-            });
-        });
-        ui.add_space(4.0);
         let selected_filter_count = usize::from(self.model.library_pack_filter.is_some())
             + usize::from(self.model.format_filter.is_some())
             + usize::from(self.model.shell_filter.is_some());
         let filters_active = selected_filter_count > 0 || !self.model.search.trim().is_empty();
+        ui.add_space(5.0);
         ui.horizontal(|ui| {
-            let disclosure = if self.filters_expanded { "⌄" } else { "›" };
-            if ui
-                .add(
-                    Button::new(format!("{disclosure}  Filters"))
-                        .small()
-                        .frame(false),
-                )
+            let filter_response = ui.add(
+                Button::new("Formats")
+                    .small()
+                    .frame(false)
+                    .min_size(Vec2::new(92.0, 28.0)),
+            );
+            paint_filter_control(
+                ui.painter(),
+                filter_response.rect,
+                self.filters_expanded,
+                palette.muted,
+            );
+            if filter_response
                 .on_hover_text(if self.filters_expanded {
                     "Hide library filters"
                 } else {
@@ -529,10 +735,17 @@ impl AccountingQuestionStudio {
                 );
             }
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                if ui
-                    .add_enabled(filters_active, Button::new("Clear").small().frame(false))
-                    .on_hover_text("Clear search and library filters")
-                    .clicked()
+                ui.label(
+                    RichText::new(self.model.filtered_questions().len().to_string())
+                        .size(10.0)
+                        .monospace()
+                        .color(palette.muted),
+                );
+                if filters_active
+                    && ui
+                        .add(Button::new("Clear").small().frame(false))
+                        .on_hover_text("Clear search and library filters")
+                        .clicked()
                 {
                     self.model.search.clear();
                     self.model.format_filter = None;
@@ -626,7 +839,7 @@ impl AccountingQuestionStudio {
                 });
         }
 
-        ui.add_space(2.0);
+        ui.add_space(4.0);
         ui.separator();
         let questions = self.model.filtered_questions();
         let selection_visible = questions.iter().any(|item| {
@@ -638,79 +851,48 @@ impl AccountingQuestionStudio {
                 .select_question(&first.pack_id, &first.question_id);
             self.active_part = 0;
         }
-        let mastered: usize = questions.iter().map(|item| item.mastered_parts).sum();
-        let total: usize = questions.iter().map(|item| item.total_parts).sum();
-        ui.horizontal(|ui| {
-            ui.label(
-                RichText::new(format!("{} QUESTIONS", questions.len()))
-                    .size(11.0)
-                    .strong()
-                    .color(palette.muted),
-            );
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                ui.label(
-                    RichText::new(format!("{mastered}/{total} mastered"))
-                        .size(11.0)
-                        .color(palette.muted),
-                );
-            });
-        });
-
         if questions.is_empty() {
             empty_library_card(ui, palette);
         } else {
             let selected_pack = self.model.selected_pack_id.clone();
             let selected_question = self.model.selected_question_id.clone();
             let mut selection: Option<(String, String)> = None;
-            ScrollArea::vertical()
+            let selected_index = questions.iter().position(|item| {
+                selected_pack.as_ref() == Some(&item.pack_id)
+                    && selected_question.as_ref() == Some(&item.question_id)
+            });
+            let mut scroll_area = ScrollArea::vertical()
                 .id_salt("question_library_scroll")
-                .auto_shrink([false, false])
-                .show_rows(ui, 68.0, questions.len(), |ui, visible_rows| {
-                    ui.set_width(ui.available_width());
-                    for index in visible_rows {
-                        let item = &questions[index];
-                        let selected = selected_pack.as_ref() == Some(&item.pack_id)
-                            && selected_question.as_ref() == Some(&item.question_id);
-                        ui.allocate_ui_with_layout(
-                            Vec2::new(ui.available_width(), 68.0),
-                            Layout::top_down(Align::Min),
-                            |ui| {
-                                if library_question_row(ui, item, selected, palette) {
-                                    selection =
-                                        Some((item.pack_id.clone(), item.question_id.clone()));
-                                }
-                            },
-                        );
-                    }
-                });
+                .auto_shrink([false, false]);
+            if self.library_scroll_to_selection {
+                if let Some(selected_index) = selected_index {
+                    scroll_area = scroll_area
+                        .vertical_scroll_offset(selected_index.saturating_sub(2) as f32 * 82.0);
+                }
+                self.library_scroll_to_selection = false;
+            }
+            scroll_area.show_rows(ui, 82.0, questions.len(), |ui, visible_rows| {
+                ui.set_width(ui.available_width());
+                for index in visible_rows {
+                    let item = &questions[index];
+                    let selected = selected_pack.as_ref() == Some(&item.pack_id)
+                        && selected_question.as_ref() == Some(&item.question_id);
+                    ui.allocate_ui_with_layout(
+                        Vec2::new(ui.available_width(), 82.0),
+                        Layout::top_down(Align::Min),
+                        |ui| {
+                            if library_question_row(ui, item, selected, palette) {
+                                selection = Some((item.pack_id.clone(), item.question_id.clone()));
+                            }
+                        },
+                    );
+                }
+            });
             if let Some((pack_id, question_id)) = selection {
                 self.model.select_question(&pack_id, &question_id);
                 self.active_part = 0;
             }
         }
-
-        ui.add_space(4.0);
-        ui.separator();
-        ui.horizontal(|ui| {
-            let (dot, label) = if self.model.is_dirty() {
-                (palette.amber, "Saving changes…")
-            } else if self.model.state.preferences.autosave_answers {
-                (palette.green, "Autosave on")
-            } else {
-                (palette.muted, "Autosave off")
-            };
-            ui.label(RichText::new("●").color(dot));
-            ui.label(RichText::new(label).size(11.0).color(palette.muted));
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                if ui
-                    .small_button("Save")
-                    .on_hover_text("Save now (⌘S)")
-                    .clicked()
-                {
-                    self.save_now();
-                }
-            });
-        });
     }
 
     fn show_question_canvas(&mut self, ui: &mut egui::Ui) {
@@ -780,19 +962,19 @@ impl AccountingQuestionStudio {
                         ui.add_space(gutter);
                         ui.vertical(|ui| {
                             ui.set_width(content_width);
-                            ui.add_space(26.0);
+                            ui.add_space(30.0);
                             self.show_status_messages(ui);
 
                             ui.add(
                                 Label::new(
                                     RichText::new(&question.title)
-                                        .size(23.0)
+                                        .size(26.0)
                                         .strong()
                                         .color(palette.text),
                                 )
                                 .wrap(),
                             );
-                            ui.add_space(6.0);
+                            ui.add_space(13.0);
                             ui.horizontal_wrapped(|ui| {
                                 ui.label(
                                     RichText::new(format!("▧  {}", shell_label(question.shell)))
@@ -828,7 +1010,7 @@ impl AccountingQuestionStudio {
                             } else {
                                 answered as f32 / total as f32
                             };
-                            ui.add_space(10.0);
+                            ui.add_space(13.0);
                             ui.horizontal(|ui| {
                                 ui.label(
                                     RichText::new(format!(
@@ -854,16 +1036,16 @@ impl AccountingQuestionStudio {
                             .on_hover_text("Progress is saved locally; mastery requires a correct answer or completed self-review.");
 
                             if !question.scenario_markdown.trim().is_empty() {
-                                ui.add_space(22.0);
+                                ui.add_space(26.0);
                                 Frame::new()
                                     .fill(palette.raised)
                                     .corner_radius(12)
-                                    .inner_margin(15)
+                                    .inner_margin(18)
                                     .show(ui, |ui| {
                                         ui.label(
                                             RichText::new("▤  Scenario").size(13.0).strong(),
                                         );
-                                        ui.add_space(6.0);
+                                        ui.add_space(10.0);
                                         render_markdown(
                                             ui,
                                             &question.scenario_markdown,
@@ -873,14 +1055,14 @@ impl AccountingQuestionStudio {
                                     });
                             }
 
-                            ui.add_space(22.0);
+                            ui.add_space(26.0);
                             ui.label(
                                 RichText::new("Required Responses")
                                     .size(17.0)
                                     .strong()
                                     .color(palette.text),
                             );
-                            ui.add_space(10.0);
+                            ui.add_space(16.0);
 
                             if question.parts.is_empty() {
                                 warning_card(ui, "This question has no answer parts.", palette);
@@ -895,7 +1077,7 @@ impl AccountingQuestionStudio {
                                         index,
                                         question_grade.parts.get(index).cloned(),
                                     );
-                                    ui.add_space(13.0);
+                                    ui.add_space(16.0);
                                 }
                             }
                             ui.add_space(14.0);
@@ -986,33 +1168,32 @@ impl AccountingQuestionStudio {
             .stroke(Stroke::new(
                 if is_active { 1.5 } else { 1.0 },
                 if is_active {
-                    palette.accent
+                    palette.accent.gamma_multiply(0.55)
                 } else {
                     palette.stroke
                 },
             ))
             .corner_radius(14)
-            .inner_margin(17)
+            .inner_margin(20)
             .shadow(subtle_card_shadow(palette))
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    Frame::new()
-                        .fill(palette.accent_soft)
-                        .corner_radius(99)
-                        .inner_margin(Margin::symmetric(8, 5))
-                        .show(ui, |ui| {
-                            ui.label(
-                                RichText::new((part_index + 1).to_string())
-                                    .size(13.0)
-                                    .strong()
-                                    .monospace()
-                                    .color(palette.accent),
-                            );
-                        });
+                    ui.spacing_mut().item_spacing.x = 12.0;
+                    let (badge_rect, _) = ui.allocate_exact_size(Vec2::splat(30.0), Sense::hover());
+                    ui.painter()
+                        .circle_filled(badge_rect.center(), 15.0, palette.accent_soft);
+                    ui.painter().text(
+                        badge_rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        (part_index + 1).to_string(),
+                        FontId::new(13.0, FontFamily::Monospace),
+                        palette.accent,
+                    );
                     ui.vertical(|ui| {
+                        ui.spacing_mut().item_spacing.y = 4.0;
                         ui.label(
                             RichText::new(format_label(part.format))
-                                .size(12.0)
+                                .size(13.0)
                                 .strong()
                                 .color(palette.text),
                         );
@@ -1022,7 +1203,7 @@ impl AccountingQuestionStudio {
                                 response_kind_label(part.kind),
                                 trim_points(part.points)
                             ))
-                            .size(11.0)
+                            .size(10.0)
                             .color(palette.muted),
                         );
                     });
@@ -1034,11 +1215,11 @@ impl AccountingQuestionStudio {
                         }
                     });
                 });
-                ui.add_space(11.0);
-                render_markdown(ui, &part.prompt_markdown, palette, 12.5);
-                ui.add_space(13.0);
+                ui.add_space(16.0);
+                render_markdown(ui, &part.prompt_markdown, palette, 13.0);
+                ui.add_space(16.0);
                 ui.separator();
-                ui.add_space(11.0);
+                ui.add_space(16.0);
 
                 let changed = {
                     let answer = self.model.answer_mut(pack_id, &question.id, &part.id);
@@ -1056,11 +1237,11 @@ impl AccountingQuestionStudio {
                 let can_check = self.model.can_check_part(pack_id, &question.id, &part.id);
 
                 if checked_after_edit && let Some(part_grade) = &part_grade {
-                    ui.add_space(10.0);
+                    ui.add_space(16.0);
                     grade_banner(ui, &part_grade.result, palette);
                 }
 
-                ui.add_space(10.0);
+                ui.add_space(16.0);
                 ui.horizontal_wrapped(|ui| {
                     let check_button = if checked_after_edit {
                         Button::new(RichText::new("✓  Checked").strong())
@@ -1104,12 +1285,12 @@ impl AccountingQuestionStudio {
                 });
 
                 if revealed {
-                    ui.add_space(10.0);
+                    ui.add_space(16.0);
                     Frame::new()
                         .fill(palette.raised)
                         .stroke(Stroke::new(1.0, palette.stroke))
                         .corner_radius(10)
-                        .inner_margin(12)
+                        .inner_margin(14)
                         .show(ui, |ui| {
                             ui.label(RichText::new("Model Answer").size(13.0).strong());
                             ui.add_space(6.0);
@@ -1158,23 +1339,6 @@ impl AccountingQuestionStudio {
 
     fn show_review(&mut self, ui: &mut egui::Ui) {
         let palette = self.palette(ui);
-        ui.horizontal(|ui| {
-            ui.label(RichText::new("Inspector").size(17.0).strong());
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                if semantic_glyph_button(
-                    ui.add(Button::new(RichText::new("×").size(16.0)).frame(false)),
-                    true,
-                    "Hide Inspector",
-                )
-                .on_hover_text("Hide the inspector (⌘I)")
-                .clicked()
-                {
-                    self.review_visible = false;
-                }
-            });
-        });
-        ui.add_space(6.0);
-
         if !self.selection_is_visible() {
             ui.label("No matching question to inspect.");
             return;
@@ -1224,8 +1388,7 @@ impl AccountingQuestionStudio {
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
-                ui.add(Label::new(RichText::new(&question.title).size(12.0).strong()).wrap());
-                ui.add_space(8.0);
+                ui.add_space(10.0);
 
                 inspector_section_title(ui, "Progress", palette);
                 Frame::new()
@@ -1428,71 +1591,44 @@ impl AccountingQuestionStudio {
                         inspector_value_row(ui, "Tags", &tags, palette, false);
                     });
 
-                if question.parts.len() > 1 {
-                    ui.add_space(10.0);
-                    inspector_section_title(ui, "Parts", palette);
+                ui.add_space(10.0);
+                let disclosure = if self.study_settings_expanded {
+                    "Study Settings  −"
+                } else {
+                    "Study Settings  +"
+                };
+                if ui
+                    .add(Button::new(disclosure).small().frame(false))
+                    .on_hover_text("Show local saving and answer-reveal preferences")
+                    .clicked()
+                {
+                    self.study_settings_expanded = !self.study_settings_expanded;
+                }
+                if self.study_settings_expanded {
                     Frame::new()
                         .fill(palette.card)
                         .stroke(Stroke::new(1.0, palette.stroke))
                         .corner_radius(9)
-                        .inner_margin(6)
+                        .inner_margin(10)
                         .show(ui, |ui| {
-                            ui.set_width(ui.available_width());
-                            for (index, question_part) in question.parts.iter().enumerate() {
-                                let status = if self.model.is_part_checked(
-                                    &pack_id,
-                                    &question.id,
-                                    &question_part.id,
-                                ) {
-                                    grade
-                                        .parts
-                                        .get(index)
-                                        .map(|grade| grade.result.status)
-                                        .unwrap_or(GradeStatus::Unanswered)
-                                } else {
-                                    GradeStatus::Unanswered
-                                };
-                                let (color, status_label) = grade_status_style(status, palette);
-                                let selected = index == self.active_part;
-                                let label = format!(
-                                    "{}  {}  ·  {status_label}",
-                                    part_label(index),
-                                    format_label(question_part.format)
-                                );
-                                if ui
-                                    .selectable_label(
-                                        selected,
-                                        RichText::new(label).size(11.0).color(color),
-                                    )
-                                    .clicked()
-                                {
-                                    self.active_part = index;
-                                }
+                            let mut autosave = self.model.state.preferences.autosave_answers;
+                            if ui.checkbox(&mut autosave, "Autosave answers").changed() {
+                                self.model.set_autosave(autosave);
+                            }
+                            let mut reveal_after_check =
+                                self.model.state.preferences.show_answer_after_check;
+                            if ui
+                                .checkbox(&mut reveal_after_check, "Reveal after checking")
+                                .changed()
+                            {
+                                self.model.set_reveal_after_check(reveal_after_check);
+                            }
+                            if ui.button("Save Now").clicked() {
+                                self.save_now();
                             }
                         });
                 }
 
-                ui.add_space(10.0);
-                inspector_section_title(ui, "Study Settings", palette);
-                Frame::new()
-                    .fill(palette.card)
-                    .stroke(Stroke::new(1.0, palette.stroke))
-                    .corner_radius(9)
-                    .inner_margin(10)
-                    .show(ui, |ui| {
-                        let mut autosave = self.model.state.preferences.autosave_answers;
-                        if ui.checkbox(&mut autosave, "Autosave answers").changed() {
-                            self.model.set_autosave(autosave);
-                        }
-                        let mut reveal_after_check =
-                            self.model.state.preferences.show_answer_after_check;
-                        if ui
-                            .checkbox(&mut reveal_after_check, "Reveal answer after checking")
-                            .changed()
-                        {
-                            self.model.set_reveal_after_check(reveal_after_check);
-                        }
-                    });
                 ui.add_space(12.0);
             });
     }
@@ -1501,29 +1637,31 @@ impl AccountingQuestionStudio {
         let palette = self.palette(root);
         let compact_width = root.available_width() < 980.0;
         Panel::top("studio_toolbar")
-            .exact_size(46.0)
+            .exact_size(52.0)
             .frame(
                 Frame::new()
                     .fill(palette.toolbar)
                     .stroke(Stroke::new(1.0, palette.stroke))
-                    .inner_margin(Margin::symmetric(12, 8)),
+                    .inner_margin(Margin::symmetric(8, 8)),
             )
             .show(root, |ui| self.show_toolbar(ui));
 
-        Panel::left("library_panel")
-            .default_size(if compact_width { 210.0 } else { 270.0 })
-            .size_range(if compact_width {
-                185.0..=230.0
-            } else {
-                220.0..=380.0
-            })
-            .frame(
-                Frame::new()
-                    .fill(palette.sidebar)
-                    .stroke(Stroke::new(1.0, palette.stroke))
-                    .inner_margin(Margin::symmetric(12, 12)),
-            )
-            .show(root, |ui| self.show_library(ui));
+        if self.library_visible {
+            Panel::left("library_panel")
+                .default_size(if compact_width { 210.0 } else { 270.0 })
+                .size_range(if compact_width {
+                    185.0..=230.0
+                } else {
+                    220.0..=380.0
+                })
+                .frame(
+                    Frame::new()
+                        .fill(palette.sidebar)
+                        .stroke(Stroke::new(1.0, palette.stroke))
+                        .inner_margin(Margin::symmetric(10, 0)),
+                )
+                .show(root, |ui| self.show_library(ui));
+        }
 
         let show_review = self.review_visible && !compact_width && self.selection_is_visible();
         if show_review {
@@ -1534,7 +1672,7 @@ impl AccountingQuestionStudio {
                     Frame::new()
                         .fill(palette.sidebar)
                         .stroke(Stroke::new(1.0, palette.stroke))
-                        .inner_margin(Margin::symmetric(12, 12)),
+                        .inner_margin(Margin::symmetric(12, 0)),
                 )
                 .show(root, |ui| self.show_review(ui));
         }
@@ -1562,6 +1700,16 @@ impl eframe::App for AccountingQuestionStudio {
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         let _ = self.model.save_now();
     }
+
+    fn clear_color(&self, visuals: &egui::Visuals) -> [f32; 4] {
+        if self.native_material_active {
+            [0.0, 0.0, 0.0, 0.0]
+        } else {
+            Palette::for_dark(visuals.dark_mode, false)
+                .canvas
+                .to_normalized_gamma_f32()
+        }
+    }
 }
 
 pub fn run() -> eframe::Result {
@@ -1570,7 +1718,11 @@ pub fn run() -> eframe::Result {
             .with_app_id(APP_IDENTIFIER)
             .with_title(APP_TITLE)
             .with_inner_size([1_180.0, 760.0])
-            .with_min_inner_size([760.0, 540.0]),
+            .with_min_inner_size([760.0, 540.0])
+            .with_transparent(cfg!(target_os = "macos"))
+            .with_fullsize_content_view(cfg!(target_os = "macos"))
+            .with_title_shown(!cfg!(target_os = "macos"))
+            .with_titlebar_shown(!cfg!(target_os = "macos")),
         centered: true,
         ..Default::default()
     };
@@ -1582,13 +1734,13 @@ pub fn run() -> eframe::Result {
     )
 }
 
-fn configure_theme(ctx: &egui::Context) {
+fn configure_theme(ctx: &egui::Context, translucent: bool) {
     ctx.enable_accesskit();
     ctx.set_theme(ThemePreference::System);
     configure_fonts(ctx);
     for theme in [Theme::Light, Theme::Dark] {
         let dark = theme == Theme::Dark;
-        let palette = Palette::for_dark(dark);
+        let palette = Palette::for_dark(dark, translucent);
         let mut style = egui::Style {
             visuals: if dark {
                 egui::Visuals::dark()
@@ -1814,10 +1966,10 @@ fn draw_single_choice(
             .fill(if is_selected {
                 palette.accent_soft
             } else {
-                palette.card
+                Color32::TRANSPARENT
             })
             .corner_radius(8)
-            .inner_margin(Margin::symmetric(8, 6))
+            .inner_margin(10)
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.radio(is_selected, format!("{} — {}", option.id, option.text))
@@ -1860,10 +2012,10 @@ fn draw_multiple_choice(
             .fill(if selected {
                 palette.accent_soft
             } else {
-                palette.card
+                Color32::TRANSPARENT
             })
             .corner_radius(8)
-            .inner_margin(Margin::symmetric(8, 6))
+            .inner_margin(10)
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.checkbox(&mut selected, format!("{} — {}", option.id, option.text))
@@ -1890,7 +2042,11 @@ fn labelled_text_edit(
     multiline: bool,
     monospace: bool,
 ) -> bool {
-    let label_response = ui.label(RichText::new(label).size(12.0).strong());
+    let label_response = ui.label(
+        RichText::new(label)
+            .size(10.0)
+            .color(ui.visuals().weak_text_color()),
+    );
     let mut editor = if multiline {
         TextEdit::multiline(value).desired_rows(8)
     } else {
@@ -1899,11 +2055,16 @@ fn labelled_text_edit(
     editor = editor
         .desired_width(f32::INFINITY)
         .hint_text(hint)
-        .margin(Margin::symmetric(10, 8));
+        .margin(8);
     if monospace {
         editor = editor.font(TextStyle::Monospace);
     }
-    ui.add(editor)
+    let response = if multiline {
+        ui.add_sized([ui.available_width(), 150.0], editor)
+    } else {
+        ui.add(editor)
+    };
+    response
         .labelled_by(label_response.id)
         .on_hover_text(label)
         .changed()
@@ -2448,14 +2609,14 @@ fn library_question_row(
     selected: bool,
     palette: Palette,
 ) -> bool {
-    let (status_color, status_label, status_icon) = match item.progress {
-        QuestionProgress::NotStarted => (palette.muted, "Not started", "▤"),
-        QuestionProgress::InProgress => (palette.amber, "In progress", "▤"),
-        QuestionProgress::Complete => (palette.green, "Mastered", "●"),
+    let (status_color, status_label) = match item.progress {
+        QuestionProgress::NotStarted => (palette.muted, "Not started"),
+        QuestionProgress::InProgress => (palette.amber, "In progress"),
+        QuestionProgress::Complete => (palette.green, "Mastered"),
     };
-    let desired_size = Vec2::new(ui.available_width(), 64.0);
+    let desired_size = Vec2::new(ui.available_width(), 80.0);
     let (rect, response) = ui.allocate_exact_size(desired_size, Sense::click());
-    let row_rect = rect.shrink2(Vec2::new(2.0, 2.0));
+    let row_rect = rect.shrink2(Vec2::new(0.0, 2.0));
     let fill = if selected {
         palette.accent
     } else if response.hovered() {
@@ -2463,11 +2624,11 @@ fn library_question_row(
     } else {
         Color32::TRANSPARENT
     };
-    ui.painter().rect_filled(row_rect, 7, fill);
+    ui.painter().rect_filled(row_rect, 8, fill);
     if response.has_focus() {
         ui.painter().rect_stroke(
             row_rect,
-            7,
+            8,
             Stroke::new(
                 1.5,
                 if selected {
@@ -2480,7 +2641,7 @@ fn library_question_row(
         );
     }
 
-    let content_rect = row_rect.shrink2(Vec2::new(10.0, 7.0));
+    let content_rect = row_rect.shrink2(Vec2::new(10.0, 6.0));
     let mut row_ui = ui.new_child(
         UiBuilder::new()
             .max_rect(content_rect)
@@ -2493,18 +2654,34 @@ fn library_question_row(
         palette.text
     };
     let secondary = if selected {
-        Color32::from_rgba_premultiplied(255, 255, 255, 215)
+        Color32::from_rgba_unmultiplied(255, 255, 255, 215)
     } else {
         palette.muted
     };
-    row_ui.label(RichText::new(status_icon).size(13.0).color(if selected {
+    row_ui.spacing_mut().item_spacing.x = 10.0;
+    let icon_color = if selected {
         palette.on_accent
     } else {
         status_color
-    }));
+    };
+    let (icon_rect, _) = row_ui.allocate_exact_size(Vec2::new(16.0, 19.0), Sense::hover());
+    paint_library_icon(
+        row_ui.painter(),
+        icon_rect,
+        item.progress == QuestionProgress::Complete,
+        icon_color,
+    );
     row_ui.vertical(|ui| {
         ui.set_width(ui.available_width());
-        ui.add(Label::new(RichText::new(&item.title).strong().color(primary)).truncate());
+        ui.spacing_mut().item_spacing.y = 5.0;
+        ui.add(
+            Label::new(
+                RichText::new(elide_for_two_lines(&item.title, 50))
+                    .size(13.0)
+                    .color(primary),
+            )
+            .wrap(),
+        );
         ui.label(
             RichText::new(format!(
                 "{}  •  {}/{}",
@@ -2512,7 +2689,7 @@ fn library_question_row(
                 item.answered_parts,
                 item.total_parts
             ))
-            .size(11.0)
+            .size(10.0)
             .color(secondary),
         );
         let fraction = if item.total_parts == 0 {
@@ -2549,6 +2726,75 @@ fn library_question_row(
         )
     });
     response.clicked()
+}
+
+fn elide_for_two_lines(text: &str, max_characters: usize) -> String {
+    if text.chars().count() <= max_characters {
+        return text.to_owned();
+    }
+    let mut result = text
+        .chars()
+        .take(max_characters.saturating_sub(1))
+        .collect::<String>();
+    result.push('…');
+    result
+}
+
+fn paint_library_icon(painter: &egui::Painter, rect: egui::Rect, complete: bool, color: Color32) {
+    let stroke = Stroke::new(1.35, color);
+    if complete {
+        painter.circle_stroke(rect.center(), 6.5, stroke);
+        painter.add(egui::Shape::line(
+            vec![
+                egui::pos2(rect.center().x - 3.2, rect.center().y),
+                egui::pos2(rect.center().x - 0.8, rect.center().y + 2.6),
+                egui::pos2(rect.center().x + 4.0, rect.center().y - 3.0),
+            ],
+            stroke,
+        ));
+    } else {
+        let page = rect.shrink2(Vec2::new(2.0, 1.0));
+        painter.rect_stroke(page, 1.5, stroke, egui::StrokeKind::Inside);
+        painter.line_segment(
+            [
+                egui::pos2(page.left() + 3.0, page.center().y - 1.0),
+                egui::pos2(page.right() - 3.0, page.center().y - 1.0),
+            ],
+            stroke,
+        );
+        painter.line_segment(
+            [
+                egui::pos2(page.left() + 3.0, page.center().y + 3.0),
+                egui::pos2(page.right() - 3.0, page.center().y + 3.0),
+            ],
+            stroke,
+        );
+    }
+}
+
+fn paint_filter_control(painter: &egui::Painter, rect: egui::Rect, expanded: bool, color: Color32) {
+    let stroke = Stroke::new(1.25, color);
+    let x = rect.left() + 7.0;
+    let center_y = rect.center().y;
+    for (offset, width) in [(-4.0, 10.0), (0.0, 7.0), (4.0, 4.0)] {
+        painter.line_segment(
+            [
+                egui::pos2(x, center_y + offset),
+                egui::pos2(x + width, center_y + offset),
+            ],
+            stroke,
+        );
+    }
+    let caret_x = rect.right() - 7.0;
+    let direction = if expanded { -1.0 } else { 1.0 };
+    painter.add(egui::Shape::line(
+        vec![
+            egui::pos2(caret_x - 2.5, center_y - direction),
+            egui::pos2(caret_x, center_y + direction * 1.5),
+            egui::pos2(caret_x + 2.5, center_y - direction),
+        ],
+        stroke,
+    ));
 }
 
 fn empty_library_card(ui: &mut egui::Ui, palette: Palette) {
@@ -2591,7 +2837,7 @@ fn chip(ui: &mut egui::Ui, text: impl Into<RichText>, fill: Color32, foreground:
 }
 
 fn inspector_section_title(ui: &mut egui::Ui, text: &str, palette: Palette) {
-    ui.label(RichText::new(text).size(11.5).strong().color(palette.text));
+    ui.label(RichText::new(text).size(11.0).strong().color(palette.text));
     ui.add_space(3.0);
 }
 
@@ -2603,14 +2849,14 @@ fn inspector_value_row(
     monospace: bool,
 ) {
     ui.horizontal(|ui| {
-        ui.label(RichText::new(label).size(11.0).color(palette.muted));
+        ui.label(RichText::new(label).size(12.0).color(palette.muted));
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
             let text = RichText::new(if value.trim().is_empty() {
                 "Unknown"
             } else {
                 value
             })
-            .size(11.0)
+            .size(12.0)
             .color(palette.text);
             ui.add(Label::new(if monospace { text.monospace() } else { text }).truncate());
         });
@@ -2662,66 +2908,135 @@ fn grade_status_style(status: GradeStatus, palette: Palette) -> (Color32, &'stat
 }
 
 fn render_markdown(ui: &mut egui::Ui, markdown: &str, palette: Palette, body_size: f32) {
-    for line in markdown.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            ui.add_space(6.0);
-            continue;
-        }
-        if let Some(heading) = trimmed.strip_prefix("### ") {
-            ui.label(
-                RichText::new(clean_inline_markdown(heading))
-                    .font(markdown_font(body_size + 2.0))
-                    .strong(),
-            );
-        } else if let Some(heading) = trimmed.strip_prefix("## ") {
-            ui.label(
-                RichText::new(clean_inline_markdown(heading))
-                    .font(markdown_font(body_size + 4.0))
-                    .strong(),
-            );
-        } else if let Some(heading) = trimmed.strip_prefix("# ") {
-            ui.label(
-                RichText::new(clean_inline_markdown(heading))
-                    .font(markdown_font(body_size + 6.0))
-                    .strong(),
-            );
-        } else if let Some(item) = trimmed
-            .strip_prefix("- ")
-            .or_else(|| trimmed.strip_prefix("* "))
-        {
-            ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new("•").color(palette.accent));
+    ui.scope(|ui| {
+        ui.spacing_mut().item_spacing.y = 4.0;
+        for line in markdown.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                ui.add_space(6.0);
+                continue;
+            }
+            if let Some(heading) = trimmed.strip_prefix("### ") {
+                ui.label(
+                    RichText::new(clean_inline_markdown(heading))
+                        .font(markdown_font(body_size + 2.0))
+                        .strong(),
+                );
+            } else if let Some(heading) = trimmed.strip_prefix("## ") {
+                ui.label(
+                    RichText::new(clean_inline_markdown(heading))
+                        .font(markdown_font(body_size + 4.0))
+                        .strong(),
+                );
+            } else if let Some(heading) = trimmed.strip_prefix("# ") {
+                ui.label(
+                    RichText::new(clean_inline_markdown(heading))
+                        .font(markdown_font(body_size + 6.0))
+                        .strong(),
+                );
+            } else if let Some(item) = trimmed
+                .strip_prefix("- ")
+                .or_else(|| trimmed.strip_prefix("* "))
+            {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(RichText::new("•").color(palette.accent));
+                    ui.add(Label::new(markdown_layout_job(item, palette, body_size)).wrap());
+                });
+            } else if trimmed.starts_with('|') {
                 ui.add(
                     Label::new(
-                        RichText::new(clean_inline_markdown(item))
-                            .font(markdown_font(body_size))
+                        RichText::new(trimmed)
+                            .size(body_size - 1.0)
+                            .monospace()
                             .color(palette.text),
                     )
                     .wrap(),
                 );
-            });
-        } else if trimmed.starts_with('|') {
-            ui.add(
-                Label::new(
-                    RichText::new(trimmed)
-                        .size(body_size - 1.0)
-                        .monospace()
-                        .color(palette.text),
-                )
-                .wrap(),
-            );
-        } else {
-            ui.add(
-                Label::new(
-                    RichText::new(clean_inline_markdown(trimmed))
-                        .font(markdown_font(body_size))
-                        .color(palette.text),
-                )
-                .wrap(),
-            );
+            } else {
+                ui.add(Label::new(markdown_layout_job(trimmed, palette, body_size)).wrap());
+            }
         }
+    });
+}
+
+fn markdown_layout_job(value: &str, palette: Palette, body_size: f32) -> egui::text::LayoutJob {
+    let mut job = egui::text::LayoutJob::default();
+    let mut remainder = value;
+    while !remainder.is_empty() {
+        let next = ["**", "__", "`"]
+            .into_iter()
+            .filter_map(|marker| remainder.find(marker).map(|position| (position, marker)))
+            .min_by_key(|(position, _)| *position);
+        let Some((position, marker)) = next else {
+            append_markdown_span(&mut job, remainder, palette, body_size, false, false);
+            break;
+        };
+        if position > 0 {
+            append_markdown_span(
+                &mut job,
+                &remainder[..position],
+                palette,
+                body_size,
+                false,
+                false,
+            );
+            remainder = &remainder[position..];
+            continue;
+        }
+        let content = &remainder[marker.len()..];
+        let Some(close) = content.find(marker) else {
+            append_markdown_span(&mut job, marker, palette, body_size, false, false);
+            remainder = content;
+            continue;
+        };
+        let span = &content[..close];
+        let is_code = marker == "`";
+        append_markdown_span(
+            &mut job,
+            span,
+            palette,
+            if marker.len() == 2 {
+                body_size + 0.2
+            } else {
+                body_size
+            },
+            false,
+            is_code,
+        );
+        remainder = &content[close + marker.len()..];
     }
+    job
+}
+
+fn append_markdown_span(
+    job: &mut egui::text::LayoutJob,
+    text: &str,
+    palette: Palette,
+    size: f32,
+    italics: bool,
+    code: bool,
+) {
+    let font_id = if code {
+        FontId::new(size - 0.5, FontFamily::Monospace)
+    } else {
+        markdown_font(size)
+    };
+    job.append(
+        text,
+        0.0,
+        egui::TextFormat {
+            font_id,
+            line_height: Some(size + 4.0),
+            color: palette.text,
+            background: if code {
+                palette.raised
+            } else {
+                Color32::TRANSPARENT
+            },
+            italics,
+            ..Default::default()
+        },
+    );
 }
 
 fn markdown_font(size: f32) -> FontId {
@@ -2816,14 +3131,6 @@ fn format_label(format: QuestionFormat) -> &'static str {
     }
 }
 
-fn part_label(index: usize) -> String {
-    if index < 26 {
-        ((b'A' + index as u8) as char).to_string()
-    } else {
-        (index + 1).to_string()
-    }
-}
-
 fn trim_points(points: f64) -> String {
     let points = if points == 0.0 { 0.0 } else { points };
     if points.fract().abs() < f64::EPSILON {
@@ -2844,6 +3151,29 @@ mod tests {
     use super::*;
 
     #[test]
+    fn markdown_layout_preserves_accounting_identifiers_and_formats_code() {
+        let palette = Palette::for_dark(false, false);
+        let source = "ACCOUNT343_TWO_PER_CONCEPT.md uses `core_000_q2` and **verified** facts";
+        let job = markdown_layout_job(source, palette, 13.0);
+        assert_eq!(
+            job.text,
+            "ACCOUNT343_TWO_PER_CONCEPT.md uses core_000_q2 and verified facts"
+        );
+        assert!(job.sections.iter().any(|section| {
+            section.format.font_id.family == FontFamily::Monospace
+                && section.format.background == palette.raised
+        }));
+    }
+
+    #[test]
+    fn sidebar_elision_is_unicode_safe_and_bounded() {
+        let title = "A very long accounting title with café values and lifecycle requirements";
+        let elided = elide_for_two_lines(title, 32);
+        assert_eq!(elided.chars().count(), 32);
+        assert!(elided.ends_with('…'));
+    }
+
+    #[test]
     fn every_response_editor_renders_the_complete_sample_pack() {
         let pack = parse_markdown(BUILT_IN_SAMPLE, BUILT_IN_SAMPLE_NAME)
             .unwrap()
@@ -2861,7 +3191,7 @@ mod tests {
                     ui,
                     part,
                     &mut answer,
-                    Palette::for_dark(false),
+                    Palette::for_dark(false, false),
                     "headless-editor",
                 );
             });
@@ -2896,7 +3226,7 @@ mod tests {
                 ui,
                 &part,
                 &mut answer,
-                Palette::for_dark(false),
+                Palette::for_dark(false, false),
                 "wide-grid-test",
             );
         });
@@ -2912,8 +3242,12 @@ mod tests {
                 ..StudentAnswer::default()
             };
             egui::__run_test_ui(|ui| {
-                let changed =
-                    draw_formula_editor(ui, &mut answer.scalar, Palette::for_dark(false), formula);
+                let changed = draw_formula_editor(
+                    ui,
+                    &mut answer.scalar,
+                    Palette::for_dark(false, false),
+                    formula,
+                );
                 assert!(!changed);
             });
             assert_eq!(answer.scalar, formula);
@@ -2947,7 +3281,7 @@ mod tests {
                 ui,
                 &part,
                 &mut answer,
-                Palette::for_dark(false),
+                Palette::for_dark(false, false),
                 "ordering-test",
             );
             assert!(!changed);
