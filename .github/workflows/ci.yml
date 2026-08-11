@@ -46,7 +46,7 @@ jobs:
         working-directory: MacRust
         run: cargo fmt --check
 
-      - name: Run 56 standard tests (2 private-bank tests stay ignored)
+      - name: Run standard tests (private-bank tests stay ignored)
         working-directory: MacRust
         run: cargo test --locked --all-targets
 

@@ -14,7 +14,7 @@ use std::time::{Duration, Instant};
 use crate::{
     AccountingQuestion, AppState, AttemptGrade, AttemptRecord, GradeStatus, ImportWarning,
     JsonStateStore, QuestionFormat, QuestionShell, StoredQuestionPack, StudentAnswer,
-    current_unix_ms, grade_question, parse_markdown,
+    current_unix_ms, grade_question, parse_markdown, question_title_presentation,
 };
 
 pub const APP_IDENTIFIER: &str = "com.lyspresso.ledgerforge";
@@ -340,7 +340,7 @@ impl StudioModel {
                         pack_id: pack.id.clone(),
                         pack_title: pack.pack.title.clone(),
                         question_id: question.id.clone(),
-                        title: question.title.clone(),
+                        title: question_title_presentation(question).title,
                         shell: question.shell,
                         formats: question.formats.clone(),
                         tags: question.tags.clone(),
@@ -807,6 +807,10 @@ fn same_source_path(left: &Path, right: &Path) -> bool {
 
 fn question_matches_query(question: &AccountingQuestion, pack_title: &str, query: &str) -> bool {
     question.title.to_ascii_lowercase().contains(query)
+        || question_title_presentation(question)
+            .title
+            .to_ascii_lowercase()
+            .contains(query)
         || question.id.to_ascii_lowercase().contains(query)
         || question
             .scenario_markdown

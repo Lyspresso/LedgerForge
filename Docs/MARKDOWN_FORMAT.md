@@ -140,6 +140,8 @@ Use stable IDs followed by a pipe:
 
 The importer recognizes large files organized with headings such as `## Item 42` or ``### `core_001_q1` ``, along with `**Question:**`, `**Required:**`, `**Answer:**`, and `**Answer key:**`. It automatically detects standard A–D multiple choice. If one item contains paired markers such as `**Question 1:**` / `**Question 2:**`, `**Question 4.1**`, or `**Q4A.**`, each question-and-answer pair becomes its own working part. Other legacy items open in a long-form response editor with the supplied answer key available for self-review.
 
+Legacy headings may also contain transport metadata such as a stable ID, verification state, learning objective, and concept. The apps derive a readable title from that envelope, prefer a nested question heading when present, and move leading provenance fields into a collapsed **Source details** disclosure. The source Markdown, IDs, answers, and accounting wording remain unchanged. See [ADAPTIVE_TITLES.md](ADAPTIVE_TITLES.md).
+
 For tables, journals, matching, ordering, numerical tolerances, and automatic grading, wrap the item in the structured directives above.
 
 ## Coverage principle

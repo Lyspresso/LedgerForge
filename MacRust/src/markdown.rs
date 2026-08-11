@@ -8,6 +8,7 @@ use crate::domain::{
     AccountingQuestion, ExpectedAnswer, QuestionFormat, QuestionOption, QuestionPack, QuestionPart,
     QuestionShell, ResponseKind, VariationStyle,
 };
+use crate::title::normalized_import_title;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -179,6 +180,11 @@ fn parse_structured(
         }
 
         let inferred_formats = unique(parts.iter().map(|part| part.format));
+        let title_prompt = parts
+            .first()
+            .map(|part| part.prompt_markdown.as_str())
+            .unwrap_or_default();
+        let title = normalized_import_title(&title, title_prompt, &id);
         questions.push(AccountingQuestion {
             id,
             title,
@@ -430,13 +436,13 @@ fn parse_legacy(markdown: &str, source_name: &str) -> ImportResult {
             .find(|line| line.trim_start().starts_with('#'))
             .copied()
             .unwrap_or("");
-        let title = if heading.is_empty() {
+        let raw_title = if heading.is_empty() {
             format!("Imported Question {}", offset + 1)
         } else {
             heading.trim_start_matches('#').trim().to_owned()
         };
         let base_id = extract_legacy_id(heading)
-            .unwrap_or_else(|| format!("legacy-{}-{}", offset + 1, slug(&title)));
+            .unwrap_or_else(|| format!("legacy-{}-{}", offset + 1, slug(&raw_title)));
         let mut natural_id = base_id.clone();
         let mut suffix = 2;
         while !used_ids.insert(natural_id.clone()) {
@@ -449,6 +455,8 @@ fn parse_legacy(markdown: &str, source_name: &str) -> ImportResult {
                 Some(start + 1),
             ));
         }
+
+        let title = normalized_import_title(&raw_title, &block, &natural_id);
 
         let choice_parts = parse_legacy_choices(&block);
         if !choice_parts.is_empty() {

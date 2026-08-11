@@ -111,6 +111,11 @@ public enum QuestionMarkdownParser {
                 warnings.append(ImportWarning("Question '\(id)' contains no parts.", line: questionLine))
             }
             let inferred = unique(parts.map(\.format))
+            title = TitlePresentation.normalizedImportTitle(
+                title,
+                prompt: parts.first?.promptMarkdown ?? "",
+                fallbackID: id
+            )
             questions.append(
                 AccountingQuestion(
                     id: id,
@@ -228,8 +233,8 @@ public enum QuestionMarkdownParser {
             let block = clean(blockLines)
             guard !block.isEmpty else { continue }
             let heading = blockLines.first(where: { $0.hasPrefix("#") }) ?? "Imported Question \(offset + 1)"
-            let title = heading.replacingOccurrences(of: "#", with: "").trimmingCharacters(in: .whitespaces)
-            let baseID = extractLegacyID(from: heading) ?? "legacy-\(offset + 1)-\(slug(title))"
+            let rawTitle = heading.replacingOccurrences(of: "#", with: "").trimmingCharacters(in: .whitespaces)
+            let baseID = extractLegacyID(from: heading) ?? "legacy-\(offset + 1)-\(slug(rawTitle))"
             var naturalID = baseID
             var suffix = 2
             while usedIDs.contains(naturalID) {
@@ -242,6 +247,11 @@ public enum QuestionMarkdownParser {
                 )
             }
             usedIDs.insert(naturalID)
+            let title = TitlePresentation.normalizedImportTitle(
+                rawTitle,
+                prompt: block,
+                fallbackID: naturalID
+            )
             let multipleChoiceParts = parseLegacyChoices(in: block)
             if !multipleChoiceParts.isEmpty {
                 questions.append(

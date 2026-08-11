@@ -312,7 +312,7 @@ final class AccountingSuiteStore {
                 screens[route] = QuestionScreenModel(
                     packID: imported.id,
                     questionID: question.id,
-                    title: question.title,
+                    title: question.displayTitle,
                     shell: question.shell,
                     variation: question.variation,
                     scenarioMarkdown: question.scenarioMarkdown,
@@ -320,7 +320,7 @@ final class AccountingSuiteStore {
                 )
                 summaryLocations[question.id] = (
                     imported.id,
-                    question.title,
+                    question.displayTitle,
                     question.parts.count
                 )
                 for part in question.parts {
@@ -345,7 +345,7 @@ final class AccountingSuiteStore {
                 locations[question.id] = (sectionIndex, questionIndex)
                 return LibraryQuestionItem(
                     id: question.id,
-                    title: question.title,
+                    title: question.displayTitle,
                     shell: question.shell,
                     variation: question.variation,
                     formats: question.formats,
@@ -437,6 +437,7 @@ final class AccountingSuiteStore {
     private func searchableText(for question: AccountingQuestion) -> String {
         var fragments = [
             question.title,
+            question.displayTitle,
             question.scenarioMarkdown,
             question.tags.joined(separator: " "),
             String(localized: question.shell.localizedTitle)

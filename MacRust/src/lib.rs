@@ -9,6 +9,7 @@ pub mod markdown;
 pub mod persistence;
 pub mod spreadsheet;
 pub mod studio;
+pub mod title;
 
 pub use domain::*;
 pub use grading::*;
@@ -16,3 +17,4 @@ pub use markdown::*;
 pub use persistence::*;
 pub use spreadsheet::*;
 pub use studio::*;
+pub use title::*;
