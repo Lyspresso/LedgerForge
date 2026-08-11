@@ -219,7 +219,9 @@ private struct ScalarResponseEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextField(mode.prompt, text: $answer.scalar, axis: .vertical)
+            TextField(text: $answer.scalar, axis: .vertical) {
+                Text(mode.prompt)
+            }
                 .font(.title3)
                 .fontDesign(mode == .shortText ? .default : .monospaced)
                 .lineLimit(1...4)
@@ -229,8 +231,8 @@ private struct ScalarResponseEditor: View {
                 .submitLabel(.done)
                 .onSubmit(onSubmit)
                 .modifier(ResponseFieldChrome())
-                .accessibilityLabel(mode.prompt)
-                .accessibilityHint(mode.accessibilityHint)
+                .accessibilityLabel(Text(mode.prompt))
+                .accessibilityHint(Text(mode.accessibilityHint))
 
             if mode == .formula {
                 StandaloneFormulaEvaluationLabel(
@@ -585,8 +587,8 @@ private struct NotesResponseEditor: View {
                     .scrollContentBackground(.hidden)
                     .frame(minHeight: 120)
                     .padding(6)
-                    .accessibilityLabel(title)
-                    .accessibilityHint(prompt)
+                    .accessibilityLabel(Text(title))
+                    .accessibilityHint(Text(prompt))
             }
             .background {
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
@@ -607,7 +609,10 @@ private struct MissingResponseConfiguration: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label(title, systemImage: "exclamationmark.triangle")
+            LocalizedSystemLabel(
+                title: title,
+                systemImage: "exclamationmark.triangle"
+            )
         } description: {
             Text(description)
         }

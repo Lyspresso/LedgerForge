@@ -8,7 +8,10 @@ struct QuestionEditorRouter: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let issue = configurationIssue {
-                Label(issue, systemImage: "exclamationmark.triangle")
+                LocalizedSystemLabel(
+                    title: issue,
+                    systemImage: "exclamationmark.triangle"
+                )
                     .foregroundStyle(.orange)
                     .accessibilityAddTraits(.isHeader)
             } else {

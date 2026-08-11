@@ -313,7 +313,10 @@ private struct QuestionProgressHeader: View {
         StudySurface(prominence: .emphasized) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 8) {
-                    Label(shell.localizedTitle, systemImage: shell.symbolName)
+                    LocalizedSystemLabel(
+                        title: shell.localizedTitle,
+                        systemImage: shell.symbolName
+                    )
                     Text(variation.localizedTitle)
                 }
                 .font(.caption.smallCaps())
@@ -697,7 +700,7 @@ private struct QuestionActionsSection: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(!canAdvance)
-                    .accessibilityHint(advanceGuidance)
+                    .accessibilityHint(Text(advanceGuidance))
                 }
             }
         }

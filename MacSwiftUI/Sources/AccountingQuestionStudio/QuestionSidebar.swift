@@ -52,8 +52,8 @@ private struct QuestionFilterBar: View {
                     Button {
                         store.toggleFormat(format)
                     } label: {
-                        Label(
-                            format.localizedName,
+                        LocalizedSystemLabel(
+                            title: format.localizedName,
                             systemImage: store.selectedFormats.contains(format)
                                 ? "checkmark"
                                 : "circle"
