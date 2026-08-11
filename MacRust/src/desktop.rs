@@ -318,6 +318,7 @@ pub struct AccountingQuestionStudio {
     library_scroll_to_selection: bool,
     navigation_pointer_press_consumed: bool,
     navigation_button_rects: [Option<egui::Rect>; 2],
+    last_laid_out_selection: Option<(String, String)>,
     flash_message: Option<String>,
     #[cfg(target_os = "macos")]
     system_material: Option<crate::macos_material::SystemMaterial>,
@@ -332,8 +333,11 @@ pub struct AccountingQuestionStudio {
 impl AccountingQuestionStudio {
     fn new(creation_context: &eframe::CreationContext<'_>) -> Self {
         #[cfg(target_os = "macos")]
-        let mut system_material =
-            crate::macos_material::install_system_material(creation_context).ok();
+        let mut system_material = crate::macos_material::install_system_material(
+            creation_context,
+            &creation_context.egui_ctx,
+        )
+        .ok();
         #[cfg(target_os = "macos")]
         let native_material_active = system_material.is_some();
         #[cfg(target_os = "macos")]
@@ -383,6 +387,7 @@ impl AccountingQuestionStudio {
             library_scroll_to_selection: true,
             navigation_pointer_press_consumed: false,
             navigation_button_rects: [None; 2],
+            last_laid_out_selection: None,
             flash_message: None,
             #[cfg(target_os = "macos")]
             system_material,
@@ -621,15 +626,18 @@ impl AccountingQuestionStudio {
         if questions.is_empty() {
             return;
         }
-        let current = questions.iter().position(|item| {
+        let Some(current) = questions.iter().position(|item| {
             self.model.selected_pack_id.as_ref() == Some(&item.pack_id)
                 && self.model.selected_question_id.as_ref() == Some(&item.question_id)
-        });
-        let index = match current {
-            Some(index) => (index as isize + delta).clamp(0, questions.len() as isize - 1) as usize,
-            None => 0,
+        }) else {
+            return;
         };
-        let item = &questions[index];
+        let Some(index) = current.checked_add_signed(delta) else {
+            return;
+        };
+        let Some(item) = questions.get(index) else {
+            return;
+        };
         self.model.select_question(&item.pack_id, &item.question_id);
         self.active_part = 0;
         self.library_scroll_to_selection = true;
@@ -647,6 +655,31 @@ impl AccountingQuestionStudio {
             selected_index.is_some_and(|index| index > 0),
             selected_index.is_some_and(|index| index + 1 < questions.len()),
         )
+    }
+
+    fn prewarm_adjacent_question_text(
+        &mut self,
+        ui: &egui::Ui,
+        content_width: f32,
+        palette: Palette,
+    ) {
+        let Some(selected_pack_id) = self.model.selected_pack_id.as_deref() else {
+            return;
+        };
+        let Some(selected_question_id) = self.model.selected_question_id.as_deref() else {
+            return;
+        };
+        let selected_pack_id = selected_pack_id.to_owned();
+        let selected_question_id = selected_question_id.to_owned();
+        let questions = self.model.filtered_questions();
+        let adjacent = adjacent_question_keys(&questions, &selected_pack_id, &selected_question_id);
+
+        for (pack_id, question_id) in adjacent.into_iter().flatten() {
+            let Some(question) = self.model.question(&pack_id, &question_id) else {
+                continue;
+            };
+            prewarm_question_text(ui, question, content_width, palette);
+        }
     }
 
     fn toolbar_navigation_activated(
@@ -915,6 +948,7 @@ impl AccountingQuestionStudio {
                 self.search_focus_requested = false;
             }
         });
+
         glass_regions
     }
 
@@ -1123,6 +1157,7 @@ impl AccountingQuestionStudio {
 
     fn show_question_canvas(&mut self, ui: &mut egui::Ui) {
         if !self.selection_is_visible() {
+            self.last_laid_out_selection = None;
             let palette = self.palette(ui);
             ui.centered_and_justified(|ui| {
                 Frame::new()
@@ -1153,9 +1188,11 @@ impl AccountingQuestionStudio {
             return;
         }
         let Some(pack_id) = self.model.selected_pack_id.clone() else {
+            self.last_laid_out_selection = None;
             return;
         };
         let Some(question) = self.model.selected_question() else {
+            self.last_laid_out_selection = None;
             let palette = self.palette(ui);
             ui.centered_and_justified(|ui| {
                 Frame::new()
@@ -1170,6 +1207,9 @@ impl AccountingQuestionStudio {
             });
             return;
         };
+        let selection_key = (pack_id.clone(), question.id.clone());
+        let selection_changed = self.last_laid_out_selection.as_ref() != Some(&selection_key);
+        self.last_laid_out_selection = Some(selection_key);
         self.active_part = self.active_part.min(question.parts.len().saturating_sub(1));
 
         let palette = self.palette(ui);
@@ -1307,6 +1347,14 @@ impl AccountingQuestionStudio {
                                 }
                             }
                             ui.add_space(14.0);
+
+                            if selection_changed {
+                                // Present the selected question first. The requested follow-up
+                                // pass warms its neighbors without extending navigation latency.
+                                ui.ctx().request_repaint();
+                            } else {
+                                self.prewarm_adjacent_question_text(ui, content_width, palette);
+                            }
                         });
                     });
                 });
@@ -1938,6 +1986,20 @@ impl AccountingQuestionStudio {
 }
 
 impl eframe::App for AccountingQuestionStudio {
+    fn raw_input_hook(&mut self, _ctx: &egui::Context, _raw_input: &mut egui::RawInput) {
+        #[cfg(target_os = "macos")]
+        {
+            let commands = self
+                .system_material
+                .as_ref()
+                .map(crate::macos_material::SystemMaterial::drain_navigation_commands)
+                .unwrap_or_default();
+            for delta in commands {
+                self.select_question_delta(delta);
+            }
+        }
+    }
+
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.model.save_if_due();
         if self.model.is_dirty() && self.model.state.preferences.autosave_answers {
@@ -1986,12 +2048,14 @@ impl eframe::App for AccountingQuestionStudio {
             };
             let toolbar_regions = glass_regions.toolbar.map(to_native);
             let structural_regions = glass_regions.structural.map(to_native);
+            let navigation_regions = self.navigation_button_rects.map(to_native);
             if let (Some(material), Some(state)) =
                 (self.system_material.as_mut(), native_material_state)
             {
                 material.update_native_materials(
                     toolbar_regions,
                     structural_regions,
+                    navigation_regions,
                     viewport.width(),
                     viewport.height(),
                     state,
@@ -3209,6 +3273,93 @@ fn grade_status_style(status: GradeStatus, palette: Palette) -> (Color32, &'stat
     }
 }
 
+fn adjacent_question_keys(
+    questions: &[LibraryQuestion],
+    selected_pack_id: &str,
+    selected_question_id: &str,
+) -> [Option<(String, String)>; 2] {
+    let Some(selected_index) = questions.iter().position(|question| {
+        question.pack_id == selected_pack_id && question.question_id == selected_question_id
+    }) else {
+        return [None, None];
+    };
+    let key = |question: &LibraryQuestion| (question.pack_id.clone(), question.question_id.clone());
+    [
+        selected_index
+            .checked_sub(1)
+            .and_then(|index| questions.get(index))
+            .map(key),
+        selected_index
+            .checked_add(1)
+            .and_then(|index| questions.get(index))
+            .map(key),
+    ]
+}
+
+fn prewarm_question_text(
+    ui: &egui::Ui,
+    question: &AccountingQuestion,
+    content_width: f32,
+    palette: Palette,
+) {
+    let _ = egui::WidgetText::from(
+        RichText::new(&question.title)
+            .size(26.0)
+            .strong()
+            .color(palette.text),
+    )
+    .into_galley(
+        ui,
+        Some(egui::TextWrapMode::Wrap),
+        content_width,
+        egui::FontSelection::Default,
+    );
+
+    prewarm_regular_markdown_lines(
+        ui.ctx(),
+        &question.scenario_markdown,
+        palette,
+        13.0,
+        (content_width - 36.0).max(1.0),
+    );
+    for part in &question.parts {
+        prewarm_regular_markdown_lines(
+            ui.ctx(),
+            &part.prompt_markdown,
+            palette,
+            13.0,
+            (content_width - 40.0).max(1.0),
+        );
+    }
+}
+
+fn prewarm_regular_markdown_lines(
+    ctx: &egui::Context,
+    markdown: &str,
+    palette: Palette,
+    body_size: f32,
+    available_width: f32,
+) {
+    ctx.fonts_mut(|fonts| {
+        for line in markdown.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty()
+                || trimmed.starts_with("# ")
+                || trimmed.starts_with("## ")
+                || trimmed.starts_with("### ")
+                || trimmed.starts_with("- ")
+                || trimmed.starts_with("* ")
+                || trimmed.starts_with('|')
+            {
+                continue;
+            }
+            let mut job = markdown_layout_job(trimmed, palette, body_size);
+            job.wrap.max_width = available_width;
+            let _ = fonts.layout_job(job);
+        }
+    });
+}
+
 fn render_markdown(ui: &mut egui::Ui, markdown: &str, palette: Palette, body_size: f32) {
     ui.scope(|ui| {
         ui.spacing_mut().item_spacing.y = 4.0;
@@ -3465,6 +3616,67 @@ mod tests {
             section.format.font_id.family == FontFamily::Monospace
                 && section.format.background == palette.raised
         }));
+    }
+
+    #[test]
+    fn adjacent_question_lookup_handles_edges_and_filtered_out_selection() {
+        let question = |id: &str| LibraryQuestion {
+            pack_id: "pack".to_owned(),
+            pack_title: "Pack".to_owned(),
+            question_id: id.to_owned(),
+            title: id.to_owned(),
+            shell: QuestionShell::Multipart,
+            formats: vec![QuestionFormat::ShortExplanation],
+            tags: Vec::new(),
+            progress: QuestionProgress::NotStarted,
+            answered_parts: 0,
+            mastered_parts: 0,
+            total_parts: 1,
+        };
+        let questions = vec![question("q1"), question("q2"), question("q3")];
+
+        assert_eq!(
+            adjacent_question_keys(&questions, "pack", "q1"),
+            [None, Some(("pack".to_owned(), "q2".to_owned()))]
+        );
+        assert_eq!(
+            adjacent_question_keys(&questions, "pack", "q2"),
+            [
+                Some(("pack".to_owned(), "q1".to_owned())),
+                Some(("pack".to_owned(), "q3".to_owned()))
+            ]
+        );
+        assert_eq!(
+            adjacent_question_keys(&questions, "pack", "q3"),
+            [Some(("pack".to_owned(), "q2".to_owned())), None]
+        );
+        assert_eq!(
+            adjacent_question_keys(&questions, "pack", "filtered-out"),
+            [None, None]
+        );
+    }
+
+    #[test]
+    fn adjacent_markdown_prewarm_populates_the_renderers_exact_cache_key() {
+        let palette = Palette::for_dark(false, false);
+        let prompt = "A long accounting prompt with `identifiers`, **amounts**, and several facts that must wrap at the same width as the visible response card.";
+        let width = 612.0;
+
+        let ctx = egui::Context::default();
+        configure_theme(&ctx, false);
+        let _ = ctx.run_ui(Default::default(), |ui| {
+            let cold_count = ui.fonts_mut(|fonts| fonts.num_galleys_in_cache());
+            prewarm_regular_markdown_lines(ui.ctx(), prompt, palette, 13.0, width);
+            let warmed_count = ui.fonts_mut(|fonts| fonts.num_galleys_in_cache());
+            assert!(warmed_count > cold_count);
+
+            let mut render_job = markdown_layout_job(prompt, palette, 13.0);
+            render_job.wrap.max_width = width;
+            let _ = ui.fonts_mut(|fonts| fonts.layout_job(render_job));
+            let rendered_count = ui.fonts_mut(|fonts| fonts.num_galleys_in_cache());
+
+            assert_eq!(rendered_count, warmed_count);
+        });
     }
 
     #[test]

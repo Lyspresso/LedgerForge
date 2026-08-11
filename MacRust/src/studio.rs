@@ -354,18 +354,21 @@ impl StudioModel {
             .collect()
     }
 
-    pub fn selected_question(&self) -> Option<AccountingQuestion> {
-        let pack_id = self.selected_pack_id.as_ref()?;
-        let question_id = self.selected_question_id.as_ref()?;
+    pub fn question(&self, pack_id: &str, question_id: &str) -> Option<&AccountingQuestion> {
         self.state
             .packs
             .iter()
-            .find(|pack| &pack.id == pack_id)?
+            .find(|pack| pack.id == pack_id)?
             .pack
             .questions
             .iter()
-            .find(|question| &question.id == question_id)
-            .cloned()
+            .find(|question| question.id == question_id)
+    }
+
+    pub fn selected_question(&self) -> Option<AccountingQuestion> {
+        let pack_id = self.selected_pack_id.as_deref()?;
+        let question_id = self.selected_question_id.as_deref()?;
+        self.question(pack_id, question_id).cloned()
     }
 
     pub fn select_question(&mut self, pack_id: &str, question_id: &str) {

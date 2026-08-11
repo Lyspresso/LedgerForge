@@ -6,18 +6,23 @@
 //! `NSGlassEffectView` instances provide Liquid Glass under the floating toolbar.
 //! We avoid undocumented material values and selectors entirely.
 
+use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::ffi::CStr;
 use std::fmt;
+use std::ptr::{NonNull, null_mut};
+use std::rc::Rc;
 use std::time::{Duration, Instant};
 
+use block2::RcBlock;
 use objc2::rc::Retained;
-use objc2::runtime::AnyClass;
+use objc2::runtime::{AnyClass, AnyObject};
 use objc2::{MainThreadMarker, Message};
 use objc2_app_kit::{
-    NSAutoresizingMaskOptions, NSColor, NSGlassEffectContainerView, NSGlassEffectView,
-    NSGlassEffectViewStyle, NSToolbar, NSToolbarDisplayMode, NSView, NSVisualEffectBlendingMode,
-    NSVisualEffectMaterial, NSVisualEffectState, NSVisualEffectView, NSWindowOrderingMode,
-    NSWindowToolbarStyle, NSWorkspace,
+    NSAutoresizingMaskOptions, NSColor, NSEvent, NSEventMask, NSGlassEffectContainerView,
+    NSGlassEffectView, NSGlassEffectViewStyle, NSToolbar, NSToolbarDisplayMode, NSView,
+    NSVisualEffectBlendingMode, NSVisualEffectMaterial, NSVisualEffectState, NSVisualEffectView,
+    NSWindowOrderingMode, NSWindowToolbarStyle, NSWorkspace,
 };
 use objc2_foundation::{NSPoint, NSRect, NSSize};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
@@ -65,10 +70,17 @@ struct NativeMaterialSnapshot {
     state: NativeMaterialState,
     toolbar_regions: [Option<GlassRect>; TOOLBAR_GLASS_REGION_COUNT],
     structural_regions: [Option<GlassRect>; STRUCTURAL_MATERIAL_REGION_COUNT],
+    navigation_regions: [Option<GlassRect>; 2],
     viewport_width: f32,
     viewport_height: f32,
     renderer_bounds: [f64; 4],
     renderer_is_flipped: bool,
+}
+
+#[derive(Debug, Default)]
+struct NativeNavigationState {
+    button_rects: RefCell<[Option<NSRect>; 2]>,
+    pending: RefCell<VecDeque<isize>>,
 }
 
 /// Owns native material views for the lifetime of the eframe window.
@@ -80,6 +92,8 @@ pub struct SystemMaterial {
     _backdrop: Retained<NSVisualEffectView>,
     structural_material_views: Vec<Retained<NSVisualEffectView>>,
     toolbar_glass: Option<GlassBatch>,
+    navigation_state: Rc<NativeNavigationState>,
+    navigation_monitor: Option<Retained<AnyObject>>,
     last_native_snapshot: Option<NativeMaterialSnapshot>,
     last_accessibility_poll: Option<Instant>,
     cached_state: NativeMaterialState,
@@ -107,6 +121,7 @@ impl fmt::Display for MaterialError {
 /// Installs the semantic backdrop and any runtime-supported Liquid Glass views.
 pub fn install_system_material(
     window: &impl HasWindowHandle,
+    egui_context: &eframe::egui::Context,
 ) -> Result<SystemMaterial, MaterialError> {
     let window_handle = window
         .window_handle()
@@ -139,7 +154,6 @@ pub fn install_system_material(
     toolbar.setAutosavesConfiguration(false);
     toolbar.setVisible(true);
     native_window.setToolbarStyle(NSWindowToolbarStyle::Unified);
-
     // `raw-window-handle` points at winit's renderer view. A subview would sit
     // above that view's own OpenGL layer, even when ordered below its siblings.
     // Put native materials in the parent and order them explicitly behind the
@@ -192,6 +206,15 @@ pub fn install_system_material(
         None
     };
 
+    // Install the pre-dispatch monitor only after all fallible AppKit setup has
+    // succeeded, so an early installation failure cannot leak a monitor token.
+    let navigation_state = Rc::new(NativeNavigationState::default());
+    let navigation_monitor = install_navigation_monitor(
+        native_window.windowNumber(),
+        Rc::clone(&navigation_state),
+        egui_context.clone(),
+    );
+
     Ok(SystemMaterial {
         renderer_view: root_view.retain(),
         _toolbar: toolbar,
@@ -199,9 +222,63 @@ pub fn install_system_material(
         _backdrop: effect_view,
         structural_material_views,
         toolbar_glass,
+        navigation_state,
+        navigation_monitor,
         last_native_snapshot: None,
         last_accessibility_poll: None,
         cached_state: NativeMaterialState::default(),
+    })
+}
+
+fn install_navigation_monitor(
+    window_number: isize,
+    navigation_state: Rc<NativeNavigationState>,
+    egui_context: eframe::egui::Context,
+) -> Option<Retained<AnyObject>> {
+    let handler: RcBlock<dyn Fn(NonNull<NSEvent>) -> *mut NSEvent> =
+        RcBlock::new(move |event_pointer: NonNull<NSEvent>| {
+            // SAFETY: AppKit invokes a local-monitor block with a valid NSEvent
+            // pointer for the duration of the call.
+            let event = unsafe { event_pointer.as_ref() };
+            if event.windowNumber() != window_number {
+                return event_pointer.as_ptr();
+            }
+
+            let location = event.locationInWindow();
+            let delta =
+                navigation_delta_at_point(location, *navigation_state.button_rects.borrow());
+            let Some(delta) = delta else {
+                return event_pointer.as_ptr();
+            };
+
+            navigation_state.pending.borrow_mut().push_back(delta);
+            egui_context.request_repaint_of(eframe::egui::ViewportId::ROOT);
+
+            // This physical arrow press is now represented by the queued native
+            // command. Returning nil prevents AppKit/winit/egui from dispatching
+            // the same mouse-down a second time; the unmatched mouse-up is safe
+            // and preserves normal pointer/focus bookkeeping.
+            null_mut()
+        });
+
+    // SAFETY: the handler returns either the event pointer supplied by AppKit or
+    // null for a handled navigation press, exactly as the API contract requires.
+    unsafe {
+        NSEvent::addLocalMonitorForEventsMatchingMask_handler(NSEventMask::LeftMouseDown, &handler)
+    }
+}
+
+fn point_is_inside(point: NSPoint, rect: NSRect) -> bool {
+    point.x >= rect.origin.x
+        && point.y >= rect.origin.y
+        && point.x < rect.origin.x + rect.size.width
+        && point.y < rect.origin.y + rect.size.height
+}
+
+fn navigation_delta_at_point(point: NSPoint, button_rects: [Option<NSRect>; 2]) -> Option<isize> {
+    button_rects.iter().enumerate().find_map(|(index, rect)| {
+        rect.is_some_and(|rect| point_is_inside(point, rect))
+            .then_some(if index == 0 { -1 } else { 1 })
     })
 }
 
@@ -273,6 +350,16 @@ impl SystemMaterial {
         self.cached_state
     }
 
+    /// Drains physical toolbar-arrow presses captured before AppKit dispatches
+    /// them into titlebar tracking or winit's event translation.
+    pub fn drain_navigation_commands(&self) -> Vec<isize> {
+        self.navigation_state
+            .pending
+            .borrow_mut()
+            .drain(..)
+            .collect()
+    }
+
     /// Updates native material geometry after egui has laid out the workspace.
     ///
     /// Reduce Transparency hides every native effect; callers then paint the
@@ -282,6 +369,7 @@ impl SystemMaterial {
         &mut self,
         toolbar_regions: [Option<GlassRect>; TOOLBAR_GLASS_REGION_COUNT],
         structural_regions: [Option<GlassRect>; STRUCTURAL_MATERIAL_REGION_COUNT],
+        navigation_regions: [Option<GlassRect>; 2],
         viewport_width: f32,
         viewport_height: f32,
         state: NativeMaterialState,
@@ -291,6 +379,7 @@ impl SystemMaterial {
             state,
             toolbar_regions,
             structural_regions,
+            navigation_regions,
             viewport_width,
             viewport_height,
             renderer_bounds: [
@@ -317,6 +406,7 @@ impl SystemMaterial {
         }
 
         if viewport_width <= 0.0 || viewport_height <= 0.0 {
+            *self.navigation_state.button_rects.borrow_mut() = [None; 2];
             self.hide_native_regions();
             return NativeMaterialState {
                 reduce_transparency: state.reduce_transparency,
@@ -327,6 +417,18 @@ impl SystemMaterial {
 
         let scale_x = bounds.size.width / f64::from(viewport_width);
         let scale_y = bounds.size.height / f64::from(viewport_height);
+        *self.navigation_state.button_rects.borrow_mut() = navigation_regions.map(|region| {
+            region.map(|region| {
+                let renderer_rect = renderer_space_rect(
+                    region,
+                    bounds,
+                    self.renderer_view.isFlipped(),
+                    scale_x,
+                    scale_y,
+                );
+                self.renderer_view.convertRect_toView(renderer_rect, None)
+            })
+        });
 
         if glass_visible && let Some(batch) = &self.toolbar_glass {
             self.update_glass_batch(
@@ -409,6 +511,17 @@ impl SystemMaterial {
     }
 }
 
+impl Drop for SystemMaterial {
+    fn drop(&mut self) {
+        if let Some(monitor) = self.navigation_monitor.take() {
+            // SAFETY: this is the exact token returned by AppKit when the local
+            // event monitor was installed, and eframe drops the app on the main
+            // AppKit thread.
+            unsafe { NSEvent::removeMonitor(&monitor) };
+        }
+    }
+}
+
 fn toolbar_corner_radius(_index: usize, height: f64) -> f64 {
     height / 2.0
 }
@@ -464,7 +577,7 @@ fn material_state(
 
 #[cfg(test)]
 mod tests {
-    use super::{GlassRect, renderer_space_rect, toolbar_corner_radius};
+    use super::{GlassRect, navigation_delta_at_point, renderer_space_rect, toolbar_corner_radius};
     use objc2_foundation::{NSPoint, NSRect, NSSize};
 
     #[test]
@@ -486,6 +599,31 @@ mod tests {
     #[test]
     fn toolbar_glass_uses_capsule_shapes() {
         assert_eq!(toolbar_corner_radius(0, 38.0), 19.0);
+    }
+
+    #[test]
+    fn native_navigation_hit_test_distinguishes_both_arrows_and_background() {
+        let previous = NSRect::new(NSPoint::new(110.0, 700.0), NSSize::new(32.0, 32.0));
+        let next = NSRect::new(NSPoint::new(142.0, 700.0), NSSize::new(32.0, 32.0));
+        let regions = [Some(previous), Some(next)];
+
+        assert_eq!(
+            navigation_delta_at_point(NSPoint::new(126.0, 716.0), regions),
+            Some(-1)
+        );
+        assert_eq!(
+            navigation_delta_at_point(NSPoint::new(158.0, 716.0), regions),
+            Some(1)
+        );
+        assert_eq!(
+            navigation_delta_at_point(NSPoint::new(142.0, 716.0), regions),
+            Some(1),
+            "the shared edge belongs to the next button"
+        );
+        assert_eq!(
+            navigation_delta_at_point(NSPoint::new(180.0, 716.0), regions),
+            None
+        );
     }
 
     #[test]
