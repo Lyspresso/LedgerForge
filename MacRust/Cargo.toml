@@ -28,7 +28,7 @@ thiserror = "2.0.19"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = { version = "0.6.3", default-features = false, features = ["std"] }
-objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSAccessibility", "NSGlassEffectView", "NSGraphics", "NSResponder", "NSView", "NSVisualEffectView", "NSWorkspace", "objc2-core-foundation"] }
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSAccessibility", "NSButton", "NSControl", "NSGlassEffectView", "NSGraphics", "NSResponder", "NSView", "NSVisualEffectView", "NSWindow", "NSWorkspace", "objc2-core-foundation"] }
 objc2-foundation = { version = "0.3.2", default-features = false, features = ["NSGeometry", "NSObject", "objc2-core-foundation"] }
 raw-window-handle = "0.6.2"
 

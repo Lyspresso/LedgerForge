@@ -14,7 +14,8 @@ use objc2::{MainThreadMarker, Message};
 use objc2_app_kit::{
     NSAutoresizingMaskOptions, NSGlassEffectContainerView, NSGlassEffectView,
     NSGlassEffectViewStyle, NSView, NSVisualEffectBlendingMode, NSVisualEffectMaterial,
-    NSVisualEffectState, NSVisualEffectView, NSWindowOrderingMode, NSWorkspace,
+    NSVisualEffectState, NSVisualEffectView, NSWindowButton, NSWindowOrderingMode,
+    NSWindowStyleMask, NSWorkspace,
 };
 use objc2_foundation::{NSPoint, NSRect, NSSize};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
@@ -181,9 +182,19 @@ impl SystemMaterial {
     pub fn update_toolbar_glass(
         &self,
         regions: [Option<GlassRect>; TOOLBAR_GLASS_REGION_COUNT],
+        toolbar_rect: GlassRect,
         viewport_width: f32,
         viewport_height: f32,
     ) -> bool {
+        if viewport_width <= 0.0 || viewport_height <= 0.0 {
+            return false;
+        }
+
+        let bounds = self.renderer_view.bounds();
+        let scale_x = bounds.size.width / f64::from(viewport_width);
+        let scale_y = bounds.size.height / f64::from(viewport_height);
+        self.center_standard_window_buttons(toolbar_rect, scale_x, scale_y);
+
         let visible = self.liquid_glass_visible();
         let Some(batch) = &self.glass_container else {
             return false;
@@ -192,13 +203,9 @@ impl SystemMaterial {
             return false;
         };
         batch.setHidden(!visible);
-        if !visible || viewport_width <= 0.0 || viewport_height <= 0.0 {
+        if !visible {
             return false;
         }
-
-        let bounds = self.renderer_view.bounds();
-        let scale_x = bounds.size.width / f64::from(viewport_width);
-        let scale_y = bounds.size.height / f64::from(viewport_height);
 
         for (view, region) in self.glass_views.iter().zip(regions) {
             let Some(region) = region else {
@@ -212,6 +219,47 @@ impl SystemMaterial {
         }
 
         visible
+    }
+
+    fn center_standard_window_buttons(&self, toolbar_rect: GlassRect, scale_x: f64, scale_y: f64) {
+        let Some(window) = self.renderer_view.window() else {
+            return;
+        };
+        if window.styleMask().contains(NSWindowStyleMask::FullScreen) {
+            return;
+        }
+
+        let renderer_toolbar = renderer_space_rect(
+            toolbar_rect,
+            self.renderer_view.bounds(),
+            self.renderer_view.isFlipped(),
+            scale_x,
+            scale_y,
+        );
+        for button_kind in [
+            NSWindowButton::CloseButton,
+            NSWindowButton::MiniaturizeButton,
+            NSWindowButton::ZoomButton,
+        ] {
+            let Some(button) = window.standardWindowButton(button_kind) else {
+                continue;
+            };
+            // SAFETY: AppKit owns the standard window buttons and their titlebar
+            // superview. We query that hierarchy afresh on every main-thread UI
+            // pass and retain the returned parent for the duration of the update.
+            let Some(parent) = (unsafe { button.superview() }) else {
+                continue;
+            };
+            let toolbar_in_parent = self
+                .renderer_view
+                .convertRect_toView(renderer_toolbar, Some(&parent));
+            let frame = button.frame();
+            let centered_y = toolbar_in_parent.origin.y
+                + (toolbar_in_parent.size.height - frame.size.height) / 2.0;
+            if (centered_y - frame.origin.y).abs() > 0.25 {
+                button.setFrameOrigin(NSPoint::new(frame.origin.x, centered_y));
+            }
+        }
     }
 
     fn app_kit_rect(

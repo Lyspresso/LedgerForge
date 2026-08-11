@@ -545,9 +545,6 @@ impl AccountingQuestionStudio {
     ) -> [Option<egui::Rect>; TOOLBAR_GLASS_REGION_COUNT] {
         let palette = self.palette(ui);
         let active = self.active_question_and_part();
-        let navigation_title = active
-            .as_ref()
-            .map_or("LedgerForge", |(question, _)| question.title.as_str());
         let selected_pack_id = self.model.selected_pack_id.clone();
         let active_key = selected_pack_id
             .as_deref()
@@ -579,11 +576,13 @@ impl AccountingQuestionStudio {
 
         let total_width = ui.available_width();
         let search_width = (total_width * 0.23).clamp(160.0, 320.0);
-        let title_width =
-            (total_width - self.traffic_lights_width - search_width - 292.0).clamp(80.0, 520.0);
+        const NAVIGATION_GROUP_WIDTH: f32 = 70.0;
+        const ACTION_GROUP_WIDTH: f32 = 134.0;
+        const GROUP_GAP: f32 = 4.0;
 
         let mut glass_regions = [None; TOOLBAR_GLASS_REGION_COUNT];
         ui.horizontal_centered(|ui| {
+            ui.spacing_mut().item_spacing.x = 0.0;
             ui.add_space(self.traffic_lights_width + 2.0);
 
             let sidebar_group =
@@ -607,17 +606,13 @@ impl AccountingQuestionStudio {
                 });
             glass_regions[0] = Some(sidebar_group.response.rect);
 
-            ui.add_space(8.0);
-            ui.add_sized(
-                [title_width, 32.0],
-                Label::new(
-                    RichText::new(navigation_title)
-                        .size(13.0)
-                        .strong()
-                        .color(palette.text),
-                )
-                .truncate(),
-            );
+            let right_cluster_width = NAVIGATION_GROUP_WIDTH
+                + GROUP_GAP
+                + ACTION_GROUP_WIDTH
+                + GROUP_GAP
+                + search_width
+                + 2.0;
+            ui.add_space((ui.available_width() - right_cluster_width).max(8.0));
 
             let navigation_group = toolbar_material_frame(palette, self.native_glass_active, 2)
                 .show(ui, |ui| {
@@ -649,7 +644,7 @@ impl AccountingQuestionStudio {
                 });
             glass_regions[1] = Some(navigation_group.response.rect);
 
-            ui.add_space(4.0);
+            ui.add_space(GROUP_GAP);
             let action_group =
                 toolbar_material_frame(palette, self.native_glass_active, 2).show(ui, |ui| {
                     ui.spacing_mut().item_spacing.x = 0.0;
@@ -718,7 +713,7 @@ impl AccountingQuestionStudio {
                 });
             glass_regions[2] = Some(action_group.response.rect);
 
-            ui.add_space(4.0);
+            ui.add_space(GROUP_GAP);
             let search_group =
                 toolbar_material_frame(palette, self.native_glass_active, Margin::symmetric(10, 2))
                     .show(ui, |ui| {
@@ -727,8 +722,8 @@ impl AccountingQuestionStudio {
                             TextEdit::singleline(&mut self.model.search)
                                 .id_salt("library_search")
                                 .hint_text("Search questions")
-                                .frame(Frame::NONE)
-                                .margin(Margin::symmetric(0, 5)),
+                                .vertical_align(Align::Center)
+                                .frame(Frame::new().inner_margin(Margin::symmetric(0, 8))),
                         )
                     });
             glass_regions[3] = Some(search_group.response.rect);
@@ -1683,10 +1678,10 @@ impl AccountingQuestionStudio {
     fn show_workspace(
         &mut self,
         root: &mut egui::Ui,
-    ) -> [Option<egui::Rect>; TOOLBAR_GLASS_REGION_COUNT] {
+    ) -> ([Option<egui::Rect>; TOOLBAR_GLASS_REGION_COUNT], egui::Rect) {
         let palette = self.palette(root);
         let compact_width = root.available_width() < 980.0;
-        let glass_regions = Panel::top("studio_toolbar")
+        let toolbar = Panel::top("studio_toolbar")
             .exact_size(52.0)
             .frame(
                 Frame::new()
@@ -1694,8 +1689,9 @@ impl AccountingQuestionStudio {
                     .stroke(Stroke::new(1.0, palette.stroke))
                     .inner_margin(Margin::symmetric(8, 8)),
             )
-            .show(root, |ui| self.show_toolbar(ui))
-            .inner;
+            .show(root, |ui| self.show_toolbar(ui));
+        let glass_regions = toolbar.inner;
+        let toolbar_rect = toolbar.response.rect;
 
         if self.library_visible {
             Panel::left("library_panel")
@@ -1731,7 +1727,7 @@ impl AccountingQuestionStudio {
         egui::CentralPanel::default_margins()
             .frame(Frame::new().fill(palette.canvas).inner_margin(0))
             .show(root, |ui| self.show_question_canvas(ui));
-        glass_regions
+        (glass_regions, toolbar_rect)
     }
 }
 
@@ -1748,7 +1744,7 @@ impl eframe::App for AccountingQuestionStudio {
         self.handle_dropped_files(root.ctx());
         let viewport = root.ctx().viewport_rect();
         let viewport_origin = viewport.min;
-        let glass_regions = self.show_workspace(root);
+        let (glass_regions, toolbar_rect) = self.show_workspace(root);
         #[cfg(target_os = "macos")]
         if let Some(material) = &self.system_material {
             let native_regions = glass_regions.map(|region| {
@@ -1761,15 +1757,25 @@ impl eframe::App for AccountingQuestionStudio {
                     )
                 })
             });
-            let glass_active =
-                material.update_toolbar_glass(native_regions, viewport.width(), viewport.height());
+            let native_toolbar_rect = crate::macos_material::GlassRect::new(
+                toolbar_rect.min.x - viewport_origin.x,
+                toolbar_rect.min.y - viewport_origin.y,
+                toolbar_rect.max.x - viewport_origin.x,
+                toolbar_rect.max.y - viewport_origin.y,
+            );
+            let glass_active = material.update_toolbar_glass(
+                native_regions,
+                native_toolbar_rect,
+                viewport.width(),
+                viewport.height(),
+            );
             if glass_active != self.native_glass_active {
                 self.native_glass_active = glass_active;
                 root.ctx().request_repaint();
             }
         }
         #[cfg(not(target_os = "macos"))]
-        let _ = (viewport_origin, glass_regions);
+        let _ = (viewport_origin, glass_regions, toolbar_rect);
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
