@@ -97,9 +97,11 @@ remains supported.
   honest self-review for judgment work.
 - Editors for single choice, select-all, number, formula, short text, long text, journal entries,
   schedules/tables, matching, ordering, true/false corrections, and entry/no-entry rationales.
-- On macOS 26 and newer, the floating toolbar groups use Apple's public `NSGlassEffectView`
-  `Regular` material, batched by `NSGlassEffectContainerView`. macOS 11–25 use the semantic
-  `NSVisualEffectView` fallback, and Reduce Transparency automatically suppresses glass.
+- On macOS 26 and newer, the floating toolbar groups, tinted library sidebar, and tinted inspector
+  use Apple's public `NSGlassEffectView` `Regular` material in separate
+  `NSGlassEffectContainerView` batches. macOS 11–25 use semantic `NSVisualEffectView` pane
+  fallbacks; Reduce Transparency switches the structural panes to opaque surfaces, and Increase
+  Contrast strengthens their text, cards, and separators.
 - System light/dark appearance, AccessKit semantics, visible control labels, and local autosave.
 
 ## Keyboard shortcuts

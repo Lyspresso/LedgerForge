@@ -18,13 +18,24 @@ use raw_window_handle::HasWindowHandle as _;
 
 const APP_TITLE: &str = "LedgerForge — Accounting Question Studio";
 pub(crate) const TOOLBAR_GLASS_REGION_COUNT: usize = 4;
+pub(crate) const STRUCTURAL_GLASS_REGION_COUNT: usize = 2;
+const LIBRARY_GLASS_REGION_INDEX: usize = 0;
+const INSPECTOR_GLASS_REGION_INDEX: usize = 1;
+
+#[derive(Debug, Clone, Copy, Default)]
+struct WorkspaceGlassRegions {
+    toolbar: [Option<egui::Rect>; TOOLBAR_GLASS_REGION_COUNT],
+    structural: [Option<egui::Rect>; STRUCTURAL_GLASS_REGION_COUNT],
+}
 
 #[derive(Debug, Clone, Copy)]
 struct Palette {
     canvas: Color32,
     sidebar: Color32,
+    inspector: Color32,
     toolbar: Color32,
     card: Color32,
+    structural_card: Color32,
     raised: Color32,
     hover: Color32,
     stroke: Color32,
@@ -48,9 +59,15 @@ impl Palette {
         if dark {
             Self {
                 canvas: rgba_or_rgb(33, 34, 45, 242, translucent),
-                sidebar: rgba_or_rgb(36, 39, 59, 216, translucent),
+                sidebar: Color32::from_rgb(34, 40, 66),
+                inspector: Color32::from_rgb(36, 38, 60),
                 toolbar: rgba_or_rgb(39, 41, 65, 194, translucent),
                 card: rgba_or_rgb(33, 34, 45, 238, translucent),
+                structural_card: if translucent {
+                    Color32::from_rgba_unmultiplied(255, 255, 255, 14)
+                } else {
+                    Color32::from_rgb(43, 45, 66)
+                },
                 raised: rgba_or_rgb(255, 255, 255, 18, translucent),
                 hover: rgba_or_rgb(255, 255, 255, 28, translucent),
                 stroke: Color32::from_rgba_unmultiplied(255, 255, 255, 32),
@@ -71,9 +88,11 @@ impl Palette {
         } else {
             Self {
                 canvas: rgba_or_rgb(248, 248, 250, 246, translucent),
-                sidebar: rgba_or_rgb(246, 246, 249, 218, translucent),
+                sidebar: Color32::from_rgb(236, 241, 249),
+                inspector: Color32::from_rgb(242, 243, 249),
                 toolbar: rgba_or_rgb(249, 249, 252, 196, translucent),
                 card: rgba_or_rgb(248, 248, 250, 241, translucent),
+                structural_card: rgba_or_rgb(249, 250, 252, 140, translucent),
                 raised: rgba_or_rgb(118, 118, 128, 18, translucent),
                 hover: rgba_or_rgb(118, 118, 128, 28, translucent),
                 stroke: Color32::from_rgba_unmultiplied(60, 60, 67, 32),
@@ -284,6 +303,9 @@ pub struct AccountingQuestionStudio {
     system_material: Option<crate::macos_material::SystemMaterial>,
     native_material_active: bool,
     native_glass_active: bool,
+    native_structural_material_active: bool,
+    native_reduce_transparency: bool,
+    native_increased_contrast: bool,
     traffic_lights_width: f32,
 }
 
@@ -294,13 +316,28 @@ impl AccountingQuestionStudio {
         #[cfg(target_os = "macos")]
         let native_material_active = system_material.is_some();
         #[cfg(target_os = "macos")]
-        let native_glass_active = system_material
+        let material_state = system_material
             .as_ref()
-            .is_some_and(|material| material.liquid_glass_visible());
+            .map(crate::macos_material::SystemMaterial::current_state)
+            .unwrap_or_default();
+        #[cfg(target_os = "macos")]
+        let native_glass_active = material_state.liquid_glass_visible;
+        #[cfg(target_os = "macos")]
+        let native_structural_material_active = material_state.structural_material_visible;
+        #[cfg(target_os = "macos")]
+        let native_reduce_transparency = material_state.reduce_transparency;
+        #[cfg(target_os = "macos")]
+        let native_increased_contrast = material_state.increased_contrast;
         #[cfg(not(target_os = "macos"))]
         let native_material_active = false;
         #[cfg(not(target_os = "macos"))]
         let native_glass_active = false;
+        #[cfg(not(target_os = "macos"))]
+        let native_structural_material_active = false;
+        #[cfg(not(target_os = "macos"))]
+        let native_reduce_transparency = false;
+        #[cfg(not(target_os = "macos"))]
+        let native_increased_contrast = false;
 
         #[cfg(target_os = "macos")]
         let traffic_lights_width = creation_context
@@ -328,12 +365,18 @@ impl AccountingQuestionStudio {
             system_material,
             native_material_active,
             native_glass_active,
+            native_structural_material_active,
+            native_reduce_transparency,
+            native_increased_contrast,
             traffic_lights_width,
         }
     }
 
     fn palette(&self, ui: &egui::Ui) -> Palette {
-        let mut palette = Palette::for_dark(ui.visuals().dark_mode, self.native_material_active);
+        let mut palette = Palette::for_dark(
+            ui.visuals().dark_mode,
+            self.native_material_active && !self.native_reduce_transparency,
+        );
         if self.native_glass_active {
             palette.toolbar = if ui.visuals().dark_mode {
                 Color32::from_rgba_unmultiplied(39, 41, 65, 42)
@@ -342,6 +385,74 @@ impl AccountingQuestionStudio {
             };
         }
         palette
+    }
+
+    fn structural_palette(&self, ui: &egui::Ui) -> Palette {
+        let mut palette = self.palette(ui);
+        if self.native_structural_material_active || self.native_increased_contrast {
+            if ui.visuals().dark_mode {
+                palette.text = Color32::from_rgb(235, 237, 244);
+                palette.muted = Color32::from_rgb(217, 224, 234);
+                palette.stroke = Color32::from_rgba_unmultiplied(255, 255, 255, 48);
+            } else {
+                palette.text = Color32::from_rgb(23, 26, 32);
+                palette.muted = Color32::from_rgb(81, 88, 102);
+                palette.stroke = Color32::from_rgba_unmultiplied(60, 60, 67, 42);
+            }
+        }
+        palette
+    }
+
+    fn structural_pane_fill(&self, palette: Palette, dark: bool, inspector: bool) -> Color32 {
+        if self.native_increased_contrast || !self.native_structural_material_active {
+            return if inspector {
+                palette.inspector
+            } else {
+                palette.sidebar
+            };
+        }
+        if self.native_glass_active {
+            return Color32::TRANSPARENT;
+        }
+        if dark {
+            if inspector {
+                Color32::from_rgba_unmultiplied(37, 40, 66, 104)
+            } else {
+                Color32::from_rgba_unmultiplied(34, 42, 74, 116)
+            }
+        } else if inspector {
+            Color32::from_rgba_unmultiplied(239, 241, 248, 112)
+        } else {
+            Color32::from_rgba_unmultiplied(232, 238, 249, 120)
+        }
+    }
+
+    fn structural_card_fill(&self, palette: Palette, dark: bool) -> Color32 {
+        if self.native_increased_contrast || !self.native_structural_material_active {
+            if dark {
+                Color32::from_rgb(43, 45, 66)
+            } else {
+                Color32::from_rgb(249, 250, 252)
+            }
+        } else {
+            palette.structural_card
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn apply_native_material_state(
+        &mut self,
+        state: crate::macos_material::NativeMaterialState,
+    ) -> bool {
+        let changed = self.native_glass_active != state.liquid_glass_visible
+            || self.native_structural_material_active != state.structural_material_visible
+            || self.native_reduce_transparency != state.reduce_transparency
+            || self.native_increased_contrast != state.increased_contrast;
+        self.native_glass_active = state.liquid_glass_visible;
+        self.native_structural_material_active = state.structural_material_visible;
+        self.native_reduce_transparency = state.reduce_transparency;
+        self.native_increased_contrast = state.increased_contrast;
+        changed
     }
 
     fn handle_shortcuts(&mut self, ctx: &egui::Context) {
@@ -739,7 +850,7 @@ impl AccountingQuestionStudio {
     }
 
     fn show_library(&mut self, ui: &mut egui::Ui) {
-        let palette = self.palette(ui);
+        let palette = self.structural_palette(ui);
         let selected_filter_count = usize::from(self.model.library_pack_filter.is_some())
             + usize::from(self.model.format_filter.is_some())
             + usize::from(self.model.shell_filter.is_some());
@@ -894,7 +1005,11 @@ impl AccountingQuestionStudio {
             self.active_part = 0;
         }
         if questions.is_empty() {
-            empty_library_card(ui, palette);
+            empty_library_card(
+                ui,
+                palette,
+                self.structural_card_fill(palette, ui.visuals().dark_mode),
+            );
         } else {
             let selected_pack = self.model.selected_pack_id.clone();
             let selected_question = self.model.selected_question_id.clone();
@@ -1380,7 +1495,8 @@ impl AccountingQuestionStudio {
     }
 
     fn show_review(&mut self, ui: &mut egui::Ui) {
-        let palette = self.palette(ui);
+        let palette = self.structural_palette(ui);
+        let structural_card_fill = self.structural_card_fill(palette, ui.visuals().dark_mode);
         if !self.selection_is_visible() {
             ui.label("No matching question to inspect.");
             return;
@@ -1434,7 +1550,7 @@ impl AccountingQuestionStudio {
 
                 inspector_section_title(ui, "Progress", palette);
                 Frame::new()
-                    .fill(palette.card)
+                    .fill(structural_card_fill)
                     .stroke(Stroke::new(1.0, palette.stroke))
                     .corner_radius(9)
                     .inner_margin(10)
@@ -1477,7 +1593,7 @@ impl AccountingQuestionStudio {
                 ui.add_space(10.0);
                 inspector_section_title(ui, "Current Response", palette);
                 Frame::new()
-                    .fill(palette.card)
+                    .fill(structural_card_fill)
                     .stroke(Stroke::new(1.0, palette.stroke))
                     .corner_radius(9)
                     .inner_margin(10)
@@ -1570,7 +1686,7 @@ impl AccountingQuestionStudio {
                 ui.add_space(10.0);
                 inspector_section_title(ui, "Identity", palette);
                 Frame::new()
-                    .fill(palette.card)
+                    .fill(structural_card_fill)
                     .stroke(Stroke::new(1.0, palette.stroke))
                     .corner_radius(9)
                     .inner_margin(10)
@@ -1583,7 +1699,7 @@ impl AccountingQuestionStudio {
                 ui.add_space(10.0);
                 inspector_section_title(ui, "Structure", palette);
                 Frame::new()
-                    .fill(palette.card)
+                    .fill(structural_card_fill)
                     .stroke(Stroke::new(1.0, palette.stroke))
                     .corner_radius(9)
                     .inner_margin(10)
@@ -1609,7 +1725,7 @@ impl AccountingQuestionStudio {
                 ui.add_space(10.0);
                 inspector_section_title(ui, "Taxonomy", palette);
                 Frame::new()
-                    .fill(palette.card)
+                    .fill(structural_card_fill)
                     .stroke(Stroke::new(1.0, palette.stroke))
                     .corner_radius(9)
                     .inner_margin(10)
@@ -1648,7 +1764,7 @@ impl AccountingQuestionStudio {
                 }
                 if self.study_settings_expanded {
                     Frame::new()
-                        .fill(palette.card)
+                        .fill(structural_card_fill)
                         .stroke(Stroke::new(1.0, palette.stroke))
                         .corner_radius(9)
                         .inner_margin(10)
@@ -1675,13 +1791,11 @@ impl AccountingQuestionStudio {
             });
     }
 
-    fn show_workspace(
-        &mut self,
-        root: &mut egui::Ui,
-    ) -> [Option<egui::Rect>; TOOLBAR_GLASS_REGION_COUNT] {
+    fn show_workspace(&mut self, root: &mut egui::Ui) -> WorkspaceGlassRegions {
         let palette = self.palette(root);
+        let structural_palette = self.structural_palette(root);
         let compact_width = root.available_width() < 980.0;
-        let glass_regions = Panel::top("studio_toolbar")
+        let toolbar = Panel::top("studio_toolbar")
             .exact_size(52.0)
             .frame(
                 Frame::new()
@@ -1691,9 +1805,15 @@ impl AccountingQuestionStudio {
             )
             .show(root, |ui| self.show_toolbar(ui))
             .inner;
+        let mut glass_regions = WorkspaceGlassRegions {
+            toolbar,
+            ..WorkspaceGlassRegions::default()
+        };
 
         if self.library_visible {
-            Panel::left("library_panel")
+            let library_fill =
+                self.structural_pane_fill(structural_palette, root.visuals().dark_mode, false);
+            let library_panel = Panel::left("library_panel")
                 .default_size(if compact_width { 210.0 } else { 270.0 })
                 .size_range(if compact_width {
                     185.0..=230.0
@@ -1702,25 +1822,31 @@ impl AccountingQuestionStudio {
                 })
                 .frame(
                     Frame::new()
-                        .fill(palette.sidebar)
-                        .stroke(Stroke::new(1.0, palette.stroke))
+                        .fill(library_fill)
+                        .stroke(Stroke::new(1.0, structural_palette.stroke))
                         .inner_margin(Margin::symmetric(10, 0)),
                 )
                 .show(root, |ui| self.show_library(ui));
+            glass_regions.structural[LIBRARY_GLASS_REGION_INDEX] =
+                Some(library_panel.response.rect);
         }
 
         let show_review = self.review_visible && !compact_width && self.selection_is_visible();
         if show_review {
-            Panel::right("review_panel")
+            let inspector_fill =
+                self.structural_pane_fill(structural_palette, root.visuals().dark_mode, true);
+            let review_panel = Panel::right("review_panel")
                 .default_size(280.0)
                 .size_range(240.0..=400.0)
                 .frame(
                     Frame::new()
-                        .fill(palette.sidebar)
-                        .stroke(Stroke::new(1.0, palette.stroke))
+                        .fill(inspector_fill)
+                        .stroke(Stroke::new(1.0, structural_palette.stroke))
                         .inner_margin(Margin::symmetric(12, 0)),
                 )
                 .show(root, |ui| self.show_review(ui));
+            glass_regions.structural[INSPECTOR_GLASS_REGION_INDEX] =
+                Some(review_panel.response.rect);
         }
 
         egui::CentralPanel::default_margins()
@@ -1736,17 +1862,32 @@ impl eframe::App for AccountingQuestionStudio {
         if self.model.is_dirty() && self.model.state.preferences.autosave_answers {
             ctx.request_repaint_after(Duration::from_millis(700));
         }
+        #[cfg(target_os = "macos")]
+        if self.system_material.is_some() {
+            // Refresh native materials promptly when macOS accessibility display
+            // options change while the otherwise-idle window is open.
+            ctx.request_repaint_after(Duration::from_secs(1));
+        }
     }
 
     fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.handle_shortcuts(root.ctx());
         self.handle_dropped_files(root.ctx());
+        #[cfg(target_os = "macos")]
+        if let Some(state) = self
+            .system_material
+            .as_ref()
+            .map(crate::macos_material::SystemMaterial::current_state)
+            && self.apply_native_material_state(state)
+        {
+            root.ctx().request_repaint();
+        }
         let viewport = root.ctx().viewport_rect();
         let viewport_origin = viewport.min;
         let glass_regions = self.show_workspace(root);
         #[cfg(target_os = "macos")]
-        if let Some(material) = &self.system_material {
-            let native_regions = glass_regions.map(|region| {
+        {
+            let to_native = |region: Option<egui::Rect>| {
                 region.map(|rect| {
                     crate::macos_material::GlassRect::new(
                         rect.min.x - viewport_origin.x,
@@ -1755,11 +1896,18 @@ impl eframe::App for AccountingQuestionStudio {
                         rect.max.y - viewport_origin.y,
                     )
                 })
+            };
+            let toolbar_regions = glass_regions.toolbar.map(to_native);
+            let structural_regions = glass_regions.structural.map(to_native);
+            let updated_state = self.system_material.as_ref().map(|material| {
+                material.update_native_materials(
+                    toolbar_regions,
+                    structural_regions,
+                    viewport.width(),
+                    viewport.height(),
+                )
             });
-            let glass_active =
-                material.update_toolbar_glass(native_regions, viewport.width(), viewport.height());
-            if glass_active != self.native_glass_active {
-                self.native_glass_active = glass_active;
+            if updated_state.is_some_and(|state| self.apply_native_material_state(state)) {
                 root.ctx().request_repaint();
             }
         }
@@ -1772,7 +1920,7 @@ impl eframe::App for AccountingQuestionStudio {
     }
 
     fn clear_color(&self, visuals: &egui::Visuals) -> [f32; 4] {
-        if self.native_material_active {
+        if self.native_material_active && !self.native_reduce_transparency {
             [0.0, 0.0, 0.0, 0.0]
         } else {
             Palette::for_dark(visuals.dark_mode, false)
@@ -2867,10 +3015,10 @@ fn paint_filter_control(painter: &egui::Painter, rect: egui::Rect, expanded: boo
     ));
 }
 
-fn empty_library_card(ui: &mut egui::Ui, palette: Palette) {
+fn empty_library_card(ui: &mut egui::Ui, palette: Palette, fill: Color32) {
     ui.add_space(16.0);
     Frame::new()
-        .fill(palette.card)
+        .fill(fill)
         .stroke(Stroke::new(1.0, palette.stroke))
         .corner_radius(10)
         .inner_margin(16)
