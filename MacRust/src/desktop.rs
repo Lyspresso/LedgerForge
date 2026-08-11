@@ -233,16 +233,16 @@ fn paint_toolbar_glyph(
             ));
             painter.line_segment(
                 [
-                    egui::pos2(center.x, rect.top()),
+                    egui::pos2(center.x, rect.top() + 1.0),
                     egui::pos2(center.x, center.y + 3.0),
                 ],
                 stroke,
             );
             painter.add(egui::Shape::line(
                 vec![
-                    egui::pos2(center.x - 3.5, rect.top() + 3.5),
-                    egui::pos2(center.x, rect.top()),
-                    egui::pos2(center.x + 3.5, rect.top() + 3.5),
+                    egui::pos2(center.x - 3.5, center.y - 0.5),
+                    egui::pos2(center.x, center.y + 3.0),
+                    egui::pos2(center.x + 3.5, center.y - 0.5),
                 ],
                 stroke,
             ));
@@ -527,6 +527,13 @@ impl AccountingQuestionStudio {
             .is_some_and(|(pack_id, (question, part))| {
                 self.model.can_check_part(pack_id, &question.id, &part.id)
             });
+        let visible_questions = self.model.filtered_questions();
+        let selected_index = visible_questions.iter().position(|question| {
+            selected_pack_id.as_ref() == Some(&question.pack_id)
+                && self.model.selected_question_id.as_ref() == Some(&question.question_id)
+        });
+        let can_go_previous = selected_index.is_some_and(|index| index > 0);
+        let can_go_next = selected_index.is_some_and(|index| index + 1 < visible_questions.len());
 
         let total_width = ui.available_width();
         let search_width = (total_width * 0.23).clamp(160.0, 320.0);
@@ -582,7 +589,7 @@ impl AccountingQuestionStudio {
                     if toolbar_glyph_button(
                         ui,
                         ToolbarGlyph::Previous,
-                        true,
+                        can_go_previous,
                         "Previous Question",
                         palette,
                     )
@@ -591,9 +598,15 @@ impl AccountingQuestionStudio {
                     {
                         self.select_question_delta(-1);
                     }
-                    if toolbar_glyph_button(ui, ToolbarGlyph::Next, true, "Next Question", palette)
-                        .on_hover_text("Next question (⌘])")
-                        .clicked()
+                    if toolbar_glyph_button(
+                        ui,
+                        ToolbarGlyph::Next,
+                        can_go_next,
+                        "Next Question",
+                        palette,
+                    )
+                    .on_hover_text("Next question (⌘])")
+                    .clicked()
                     {
                         self.select_question_delta(1);
                     }
