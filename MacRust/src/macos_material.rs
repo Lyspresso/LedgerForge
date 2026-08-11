@@ -13,9 +13,9 @@ use objc2::runtime::AnyClass;
 use objc2::{MainThreadMarker, Message};
 use objc2_app_kit::{
     NSAutoresizingMaskOptions, NSGlassEffectContainerView, NSGlassEffectView,
-    NSGlassEffectViewStyle, NSView, NSVisualEffectBlendingMode, NSVisualEffectMaterial,
-    NSVisualEffectState, NSVisualEffectView, NSWindowButton, NSWindowOrderingMode,
-    NSWindowStyleMask, NSWorkspace,
+    NSGlassEffectViewStyle, NSToolbar, NSToolbarDisplayMode, NSView, NSVisualEffectBlendingMode,
+    NSVisualEffectMaterial, NSVisualEffectState, NSVisualEffectView, NSWindowOrderingMode,
+    NSWindowToolbarStyle, NSWorkspace,
 };
 use objc2_foundation::{NSPoint, NSRect, NSSize};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
@@ -45,6 +45,7 @@ impl GlassRect {
 #[derive(Debug)]
 pub struct SystemMaterial {
     renderer_view: Retained<NSView>,
+    _toolbar: Retained<NSToolbar>,
     _container: Retained<NSView>,
     _backdrop: Retained<NSVisualEffectView>,
     glass_container: Option<Retained<NSGlassEffectContainerView>>,
@@ -87,6 +88,24 @@ pub fn install_system_material(
     // for the lifetime of the borrowed window handle. This function runs during
     // eframe creation on AppKit's main thread, before normal UI rendering begins.
     let root_view = unsafe { handle.ns_view.cast::<NSView>().as_ref() };
+
+    // LedgerForge draws its controls in the full-size content view, but this is
+    // still structurally a toolbar window. Giving AppKit an empty native toolbar
+    // lets the system choose the toolbar-window corner radius and standard-button
+    // insets for the current macOS release and titlebar layout direction. The
+    // toolbar has no items, so hit testing continues through to egui's controls.
+    let native_window = root_view.window().ok_or(MaterialError::UnsupportedWindow)?;
+    let toolbar = native_window.toolbar().unwrap_or_else(|| {
+        let toolbar = NSToolbar::init(main_thread.alloc());
+        native_window.setToolbar(Some(&toolbar));
+        toolbar
+    });
+    toolbar.setDisplayMode(NSToolbarDisplayMode::IconOnly);
+    toolbar.setAllowsUserCustomization(false);
+    toolbar.setAutosavesConfiguration(false);
+    toolbar.setVisible(true);
+    native_window.setToolbarStyle(NSWindowToolbarStyle::Unified);
+
     // `raw-window-handle` points at winit's renderer view. A subview would sit
     // above that view's own OpenGL layer, even when ordered below its siblings.
     // Put native materials in the parent and order them explicitly behind the
@@ -154,6 +173,7 @@ pub fn install_system_material(
 
     Ok(SystemMaterial {
         renderer_view: root_view.retain(),
+        _toolbar: toolbar,
         _container: container,
         _backdrop: effect_view,
         glass_container,
@@ -182,7 +202,6 @@ impl SystemMaterial {
     pub fn update_toolbar_glass(
         &self,
         regions: [Option<GlassRect>; TOOLBAR_GLASS_REGION_COUNT],
-        toolbar_rect: GlassRect,
         viewport_width: f32,
         viewport_height: f32,
     ) -> bool {
@@ -193,7 +212,6 @@ impl SystemMaterial {
         let bounds = self.renderer_view.bounds();
         let scale_x = bounds.size.width / f64::from(viewport_width);
         let scale_y = bounds.size.height / f64::from(viewport_height);
-        self.center_standard_window_buttons(toolbar_rect, scale_x, scale_y);
 
         let visible = self.liquid_glass_visible();
         let Some(batch) = &self.glass_container else {
@@ -219,47 +237,6 @@ impl SystemMaterial {
         }
 
         visible
-    }
-
-    fn center_standard_window_buttons(&self, toolbar_rect: GlassRect, scale_x: f64, scale_y: f64) {
-        let Some(window) = self.renderer_view.window() else {
-            return;
-        };
-        if window.styleMask().contains(NSWindowStyleMask::FullScreen) {
-            return;
-        }
-
-        let renderer_toolbar = renderer_space_rect(
-            toolbar_rect,
-            self.renderer_view.bounds(),
-            self.renderer_view.isFlipped(),
-            scale_x,
-            scale_y,
-        );
-        for button_kind in [
-            NSWindowButton::CloseButton,
-            NSWindowButton::MiniaturizeButton,
-            NSWindowButton::ZoomButton,
-        ] {
-            let Some(button) = window.standardWindowButton(button_kind) else {
-                continue;
-            };
-            // SAFETY: AppKit owns the standard window buttons and their titlebar
-            // superview. We query that hierarchy afresh on every main-thread UI
-            // pass and retain the returned parent for the duration of the update.
-            let Some(parent) = (unsafe { button.superview() }) else {
-                continue;
-            };
-            let toolbar_in_parent = self
-                .renderer_view
-                .convertRect_toView(renderer_toolbar, Some(&parent));
-            let frame = button.frame();
-            let centered_y = toolbar_in_parent.origin.y
-                + (toolbar_in_parent.size.height - frame.size.height) / 2.0;
-            if (centered_y - frame.origin.y).abs() > 0.25 {
-                button.setFrameOrigin(NSPoint::new(frame.origin.x, centered_y));
-            }
-        }
     }
 
     fn app_kit_rect(

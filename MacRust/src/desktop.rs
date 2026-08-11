@@ -1678,10 +1678,10 @@ impl AccountingQuestionStudio {
     fn show_workspace(
         &mut self,
         root: &mut egui::Ui,
-    ) -> ([Option<egui::Rect>; TOOLBAR_GLASS_REGION_COUNT], egui::Rect) {
+    ) -> [Option<egui::Rect>; TOOLBAR_GLASS_REGION_COUNT] {
         let palette = self.palette(root);
         let compact_width = root.available_width() < 980.0;
-        let toolbar = Panel::top("studio_toolbar")
+        let glass_regions = Panel::top("studio_toolbar")
             .exact_size(52.0)
             .frame(
                 Frame::new()
@@ -1689,9 +1689,8 @@ impl AccountingQuestionStudio {
                     .stroke(Stroke::new(1.0, palette.stroke))
                     .inner_margin(Margin::symmetric(8, 8)),
             )
-            .show(root, |ui| self.show_toolbar(ui));
-        let glass_regions = toolbar.inner;
-        let toolbar_rect = toolbar.response.rect;
+            .show(root, |ui| self.show_toolbar(ui))
+            .inner;
 
         if self.library_visible {
             Panel::left("library_panel")
@@ -1727,7 +1726,7 @@ impl AccountingQuestionStudio {
         egui::CentralPanel::default_margins()
             .frame(Frame::new().fill(palette.canvas).inner_margin(0))
             .show(root, |ui| self.show_question_canvas(ui));
-        (glass_regions, toolbar_rect)
+        glass_regions
     }
 }
 
@@ -1744,7 +1743,7 @@ impl eframe::App for AccountingQuestionStudio {
         self.handle_dropped_files(root.ctx());
         let viewport = root.ctx().viewport_rect();
         let viewport_origin = viewport.min;
-        let (glass_regions, toolbar_rect) = self.show_workspace(root);
+        let glass_regions = self.show_workspace(root);
         #[cfg(target_os = "macos")]
         if let Some(material) = &self.system_material {
             let native_regions = glass_regions.map(|region| {
@@ -1757,25 +1756,15 @@ impl eframe::App for AccountingQuestionStudio {
                     )
                 })
             });
-            let native_toolbar_rect = crate::macos_material::GlassRect::new(
-                toolbar_rect.min.x - viewport_origin.x,
-                toolbar_rect.min.y - viewport_origin.y,
-                toolbar_rect.max.x - viewport_origin.x,
-                toolbar_rect.max.y - viewport_origin.y,
-            );
-            let glass_active = material.update_toolbar_glass(
-                native_regions,
-                native_toolbar_rect,
-                viewport.width(),
-                viewport.height(),
-            );
+            let glass_active =
+                material.update_toolbar_glass(native_regions, viewport.width(), viewport.height());
             if glass_active != self.native_glass_active {
                 self.native_glass_active = glass_active;
                 root.ctx().request_repaint();
             }
         }
         #[cfg(not(target_os = "macos"))]
-        let _ = (viewport_origin, glass_regions, toolbar_rect);
+        let _ = (viewport_origin, glass_regions);
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
