@@ -8,6 +8,7 @@
 
 use std::ffi::CStr;
 use std::fmt;
+use std::time::{Duration, Instant};
 
 use objc2::rc::Retained;
 use objc2::runtime::AnyClass;
@@ -22,6 +23,8 @@ use objc2_foundation::{NSPoint, NSRect, NSSize};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 
 use crate::desktop::{STRUCTURAL_MATERIAL_REGION_COUNT, TOOLBAR_GLASS_REGION_COUNT};
+
+const ACCESSIBILITY_POLL_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GlassRect {
@@ -57,6 +60,17 @@ struct GlassBatch {
     views: Vec<Retained<NSGlassEffectView>>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct NativeMaterialSnapshot {
+    state: NativeMaterialState,
+    toolbar_regions: [Option<GlassRect>; TOOLBAR_GLASS_REGION_COUNT],
+    structural_regions: [Option<GlassRect>; STRUCTURAL_MATERIAL_REGION_COUNT],
+    viewport_width: f32,
+    viewport_height: f32,
+    renderer_bounds: [f64; 4],
+    renderer_is_flipped: bool,
+}
+
 /// Owns native material views for the lifetime of the eframe window.
 #[derive(Debug)]
 pub struct SystemMaterial {
@@ -66,6 +80,9 @@ pub struct SystemMaterial {
     _backdrop: Retained<NSVisualEffectView>,
     structural_material_views: Vec<Retained<NSVisualEffectView>>,
     toolbar_glass: Option<GlassBatch>,
+    last_native_snapshot: Option<NativeMaterialSnapshot>,
+    last_accessibility_poll: Option<Instant>,
+    cached_state: NativeMaterialState,
 }
 
 #[derive(Debug)]
@@ -182,6 +199,9 @@ pub fn install_system_material(
         _backdrop: effect_view,
         structural_material_views,
         toolbar_glass,
+        last_native_snapshot: None,
+        last_accessibility_poll: None,
+        cached_state: NativeMaterialState::default(),
     })
 }
 
@@ -235,14 +255,22 @@ impl SystemMaterial {
     }
 
     /// Current system accessibility and material availability state.
-    pub fn current_state(&self) -> NativeMaterialState {
+    pub fn current_state(&mut self) -> NativeMaterialState {
+        if self
+            .last_accessibility_poll
+            .is_some_and(|last_poll| last_poll.elapsed() < ACCESSIBILITY_POLL_INTERVAL)
+        {
+            return self.cached_state;
+        }
         let (reduce_transparency, increased_contrast) = accessibility_display_options();
-        material_state(
+        self.cached_state = material_state(
             self.liquid_glass_available(),
             self.structural_material_views.len() == STRUCTURAL_MATERIAL_REGION_COUNT,
             reduce_transparency,
             increased_contrast,
-        )
+        );
+        self.last_accessibility_poll = Some(Instant::now());
+        self.cached_state
     }
 
     /// Updates native material geometry after egui has laid out the workspace.
@@ -251,13 +279,33 @@ impl SystemMaterial {
     /// panes with opaque semantic fallback colors. Structural panes use
     /// behind-window `NSVisualEffectView` on every supported macOS version.
     pub fn update_native_materials(
-        &self,
+        &mut self,
         toolbar_regions: [Option<GlassRect>; TOOLBAR_GLASS_REGION_COUNT],
         structural_regions: [Option<GlassRect>; STRUCTURAL_MATERIAL_REGION_COUNT],
         viewport_width: f32,
         viewport_height: f32,
+        state: NativeMaterialState,
     ) -> NativeMaterialState {
-        let state = self.current_state();
+        let bounds = self.renderer_view.bounds();
+        let snapshot = NativeMaterialSnapshot {
+            state,
+            toolbar_regions,
+            structural_regions,
+            viewport_width,
+            viewport_height,
+            renderer_bounds: [
+                bounds.origin.x,
+                bounds.origin.y,
+                bounds.size.width,
+                bounds.size.height,
+            ],
+            renderer_is_flipped: self.renderer_view.isFlipped(),
+        };
+        if self.last_native_snapshot == Some(snapshot) {
+            return state;
+        }
+        self.last_native_snapshot = Some(snapshot);
+
         let glass_visible = state.liquid_glass_visible;
         if let Some(batch) = &self.toolbar_glass {
             batch.container.setHidden(!glass_visible);
@@ -277,7 +325,6 @@ impl SystemMaterial {
             };
         }
 
-        let bounds = self.renderer_view.bounds();
         let scale_x = bounds.size.width / f64::from(viewport_width);
         let scale_y = bounds.size.height / f64::from(viewport_height);
 

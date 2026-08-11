@@ -196,6 +196,24 @@ fn toolbar_material_frame(
         .inner_margin(inner_margin)
 }
 
+fn navigation_activation(
+    pointer_pressed_on_button: bool,
+    response_clicked: bool,
+    pointer_press_consumed: bool,
+) -> (bool, bool) {
+    if pointer_pressed_on_button {
+        // Match keyboard navigation latency by acting on mouse-down. The
+        // consumed flag suppresses egui's later mouse-up `clicked` response so
+        // one physical click can never advance two questions.
+        (!pointer_press_consumed, true)
+    } else {
+        (
+            response_clicked && !pointer_press_consumed,
+            pointer_press_consumed,
+        )
+    }
+}
+
 fn paint_toolbar_glyph(
     painter: &egui::Painter,
     rect: egui::Rect,
@@ -298,6 +316,8 @@ pub struct AccountingQuestionStudio {
     filters_expanded: bool,
     search_focus_requested: bool,
     library_scroll_to_selection: bool,
+    navigation_pointer_press_consumed: bool,
+    navigation_button_rects: [Option<egui::Rect>; 2],
     flash_message: Option<String>,
     #[cfg(target_os = "macos")]
     system_material: Option<crate::macos_material::SystemMaterial>,
@@ -312,12 +332,13 @@ pub struct AccountingQuestionStudio {
 impl AccountingQuestionStudio {
     fn new(creation_context: &eframe::CreationContext<'_>) -> Self {
         #[cfg(target_os = "macos")]
-        let system_material = crate::macos_material::install_system_material(creation_context).ok();
+        let mut system_material =
+            crate::macos_material::install_system_material(creation_context).ok();
         #[cfg(target_os = "macos")]
         let native_material_active = system_material.is_some();
         #[cfg(target_os = "macos")]
         let material_state = system_material
-            .as_ref()
+            .as_mut()
             .map(crate::macos_material::SystemMaterial::current_state)
             .unwrap_or_default();
         #[cfg(target_os = "macos")]
@@ -360,6 +381,8 @@ impl AccountingQuestionStudio {
             filters_expanded: false,
             search_focus_requested: false,
             library_scroll_to_selection: true,
+            navigation_pointer_press_consumed: false,
+            navigation_button_rects: [None; 2],
             flash_message: None,
             #[cfg(target_os = "macos")]
             system_material,
@@ -612,6 +635,71 @@ impl AccountingQuestionStudio {
         self.library_scroll_to_selection = true;
     }
 
+    fn navigation_availability(&mut self) -> (bool, bool) {
+        let selected_pack_id = self.model.selected_pack_id.clone();
+        let selected_question_id = self.model.selected_question_id.clone();
+        let questions = self.model.filtered_questions();
+        let selected_index = questions.iter().position(|question| {
+            selected_pack_id.as_ref() == Some(&question.pack_id)
+                && selected_question_id.as_ref() == Some(&question.question_id)
+        });
+        (
+            selected_index.is_some_and(|index| index > 0),
+            selected_index.is_some_and(|index| index + 1 < questions.len()),
+        )
+    }
+
+    fn toolbar_navigation_activated(
+        &mut self,
+        ui: &egui::Ui,
+        response: &egui::Response,
+        enabled: bool,
+    ) -> bool {
+        let pressed_on_button =
+            enabled && response.hovered() && ui.input(|input| input.pointer.primary_pressed());
+        let (activated, consumed) = navigation_activation(
+            pressed_on_button,
+            response.clicked(),
+            self.navigation_pointer_press_consumed,
+        );
+        self.navigation_pointer_press_consumed = consumed;
+        activated
+    }
+
+    fn handle_navigation_pointer_press(&mut self, ctx: &egui::Context) {
+        if self.navigation_pointer_press_consumed
+            || !ctx.input(|input| input.pointer.primary_pressed())
+        {
+            return;
+        }
+        let Some(position) = ctx.input(|input| input.pointer.interact_pos()) else {
+            return;
+        };
+        let delta = if self.navigation_button_rects[0].is_some_and(|rect| rect.contains(position)) {
+            Some(-1)
+        } else if self.navigation_button_rects[1].is_some_and(|rect| rect.contains(position)) {
+            Some(1)
+        } else {
+            None
+        };
+        if let Some(delta) = delta {
+            let (can_go_previous, can_go_next) = self.navigation_availability();
+            let enabled = if delta < 0 {
+                can_go_previous
+            } else {
+                can_go_next
+            };
+            if !enabled {
+                return;
+            }
+            // Use the last painted hit rectangles so navigation happens before
+            // any question-dependent toolbar, canvas, or inspector work. This
+            // gives the pointer path the same ordering as the keyboard shortcut.
+            self.navigation_pointer_press_consumed = true;
+            self.select_question_delta(delta);
+        }
+    }
+
     fn handle_dropped_files(&mut self, ctx: &egui::Context) {
         let paths = ctx.input(|input| {
             input
@@ -661,13 +749,7 @@ impl AccountingQuestionStudio {
             .is_some_and(|(pack_id, (question, part))| {
                 self.model.can_check_part(pack_id, &question.id, &part.id)
             });
-        let visible_questions = self.model.filtered_questions();
-        let selected_index = visible_questions.iter().position(|question| {
-            selected_pack_id.as_ref() == Some(&question.pack_id)
-                && self.model.selected_question_id.as_ref() == Some(&question.question_id)
-        });
-        let can_go_previous = selected_index.is_some_and(|index| index > 0);
-        let can_go_next = selected_index.is_some_and(|index| index + 1 < visible_questions.len());
+        let (can_go_previous, can_go_next) = self.navigation_availability();
 
         let total_width = ui.available_width();
         let search_width = (total_width * 0.23).clamp(160.0, 320.0);
@@ -712,29 +794,32 @@ impl AccountingQuestionStudio {
             let navigation_group = toolbar_material_frame(palette, self.native_glass_active, 2)
                 .show(ui, |ui| {
                     ui.spacing_mut().item_spacing.x = 0.0;
-                    if toolbar_glyph_button(
+                    let previous = toolbar_glyph_button(
                         ui,
                         ToolbarGlyph::Previous,
                         can_go_previous,
                         "Previous Question",
                         palette,
                     )
-                    .on_hover_text("Previous question (⌘[)")
-                    .clicked()
-                    {
+                    .on_hover_text("Previous question (⌘[)");
+                    self.navigation_button_rects[0] = Some(previous.rect);
+                    if self.toolbar_navigation_activated(ui, &previous, can_go_previous) {
                         self.select_question_delta(-1);
                     }
-                    if toolbar_glyph_button(
+                    let next = toolbar_glyph_button(
                         ui,
                         ToolbarGlyph::Next,
                         can_go_next,
                         "Next Question",
                         palette,
                     )
-                    .on_hover_text("Next question (⌘])")
-                    .clicked()
-                    {
+                    .on_hover_text("Next question (⌘])");
+                    self.navigation_button_rects[1] = Some(next.rect);
+                    if self.toolbar_navigation_activated(ui, &next, can_go_next) {
                         self.select_question_delta(1);
+                    }
+                    if ui.input(|input| input.pointer.primary_released()) {
+                        self.navigation_pointer_press_consumed = false;
                     }
                 });
             glass_regions[1] = Some(navigation_group.response.rect);
@@ -1090,7 +1175,7 @@ impl AccountingQuestionStudio {
         let palette = self.palette(ui);
         egui::CentralPanel::no_frame().show(ui, |ui| {
             ScrollArea::vertical()
-                .id_salt("question_canvas_scroll")
+                .id_salt(("question_canvas_scroll", &pack_id, &question.id))
                 .auto_shrink([false, false])
                 .show(ui, |ui| {
                     let available_width = ui.available_width();
@@ -1540,7 +1625,7 @@ impl AccountingQuestionStudio {
         };
 
         ScrollArea::vertical()
-            .id_salt("review_scroll")
+            .id_salt(("review_scroll", &pack_id, &question.id))
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
@@ -1874,14 +1959,14 @@ impl eframe::App for AccountingQuestionStudio {
 
     fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.handle_shortcuts(root.ctx());
+        self.handle_navigation_pointer_press(root.ctx());
         self.handle_dropped_files(root.ctx());
         #[cfg(target_os = "macos")]
-        if let Some(state) = self
+        let native_material_state = self
             .system_material
-            .as_ref()
-            .map(crate::macos_material::SystemMaterial::current_state)
-            && self.apply_native_material_state(state)
-        {
+            .as_mut()
+            .map(crate::macos_material::SystemMaterial::current_state);
+        if native_material_state.is_some_and(|state| self.apply_native_material_state(state)) {
             root.ctx().request_repaint();
         }
         let viewport = root.ctx().viewport_rect();
@@ -1901,16 +1986,16 @@ impl eframe::App for AccountingQuestionStudio {
             };
             let toolbar_regions = glass_regions.toolbar.map(to_native);
             let structural_regions = glass_regions.structural.map(to_native);
-            let updated_state = self.system_material.as_ref().map(|material| {
+            if let (Some(material), Some(state)) =
+                (self.system_material.as_mut(), native_material_state)
+            {
                 material.update_native_materials(
                     toolbar_regions,
                     structural_regions,
                     viewport.width(),
                     viewport.height(),
-                )
-            });
-            if updated_state.is_some_and(|state| self.apply_native_material_state(state)) {
-                root.ctx().request_repaint();
+                    state,
+                );
             }
         }
         #[cfg(not(target_os = "macos"))]
@@ -1955,7 +2040,6 @@ pub fn run() -> eframe::Result {
 }
 
 fn configure_theme(ctx: &egui::Context, translucent: bool) {
-    ctx.enable_accesskit();
     ctx.set_theme(ThemePreference::System);
     configure_fonts(ctx);
     for theme in [Theme::Light, Theme::Dark] {
@@ -3389,6 +3473,27 @@ mod tests {
         let elided = elide_for_two_lines(title, 32);
         assert_eq!(elided.chars().count(), 32);
         assert!(elided.ends_with('…'));
+    }
+
+    #[test]
+    fn toolbar_navigation_fires_on_press_and_suppresses_the_release_click() {
+        let (activated_on_press, consumed) = navigation_activation(true, false, false);
+        assert!(activated_on_press);
+        assert!(consumed);
+
+        let (activated_on_release, still_consumed) = navigation_activation(false, true, consumed);
+        assert!(!activated_on_release);
+        assert!(still_consumed);
+
+        let (second_handler_on_same_press, still_consumed) =
+            navigation_activation(true, false, consumed);
+        assert!(!second_handler_on_same_press);
+        assert!(still_consumed);
+
+        let (keyboard_or_accessibility_activation, consumed) =
+            navigation_activation(false, true, false);
+        assert!(keyboard_or_accessibility_activation);
+        assert!(!consumed);
     }
 
     #[test]
