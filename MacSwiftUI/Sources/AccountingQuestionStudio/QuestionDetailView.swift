@@ -24,7 +24,7 @@ struct QuestionDetailView: View {
                 progress: store.progress(for: question),
                 store: store
             )
-            .navigationTitle(question.title)
+            .navigationTitle(question.displayTitle)
         } else {
             QuestionWelcomeView(store: store)
         }
@@ -40,7 +40,7 @@ private struct QuestionWorkspace: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
                 QuestionHeader(
-                    title: question.title,
+                    presentation: question.titlePresentation,
                     shell: question.shell,
                     sourceName: question.sourceName,
                     progress: progress
@@ -73,17 +73,37 @@ private struct QuestionWorkspace: View {
 }
 
 private struct QuestionHeader: View {
-    let title: String
+    let presentation: QuestionTitlePresentation
     let shell: QuestionShell
     let sourceName: String
     let progress: QuestionProgress
 
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
-            Text(title)
+            Text(presentation.title)
                 .font(.largeTitle)
                 .fontWeight(.semibold)
                 .textSelection(.enabled)
+
+            if presentation.learningObjective != nil || presentation.verification != nil {
+                HStack(spacing: 7) {
+                    if let objective = presentation.learningObjective {
+                        Text(objective)
+                            .font(.caption.weight(.medium))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.quaternary, in: Capsule())
+                    }
+                    if let verification = presentation.verification {
+                        Text(verification)
+                            .font(.caption.weight(.medium))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.quaternary, in: Capsule())
+                    }
+                }
+                .foregroundStyle(.secondary)
+            }
 
             QuestionMetadata(shell: shell, sourceName: sourceName)
 
@@ -237,7 +257,25 @@ private struct QuestionPartCard: View {
                 isSelfReviewed: isSelfReviewed
             )
 
-            MarkdownText(markdown: part.promptMarkdown)
+            MarkdownText(markdown: part.promptPresentation.body)
+
+            if !part.promptPresentation.importDetails.isEmpty {
+                DisclosureGroup("Source details") {
+                    VStack(alignment: .leading, spacing: 5) {
+                        ForEach(
+                            Array(part.promptPresentation.importDetails.enumerated()),
+                            id: \.offset
+                        ) { _, detail in
+                            LabeledContent(detail.label, value: detail.value)
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
 
             Divider()
 

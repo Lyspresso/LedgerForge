@@ -5,7 +5,8 @@ use std::time::Duration;
 use accounting_question_core::{
     APP_IDENTIFIER, AccountingQuestion, CellValue, GradeResult, GradeStatus, LibraryQuestion,
     PartGrade, QuestionFormat, QuestionPart, QuestionProgress, QuestionShell, ResponseKind,
-    StudentAnswer, StudioModel, evaluate_formula, evaluate_grid,
+    StudentAnswer, StudioModel, evaluate_formula, evaluate_grid, prompt_presentation,
+    question_title_presentation,
 };
 use eframe::egui::{
     self, Align, Button, Color32, ComboBox, CornerRadius, FontData, FontDefinitions, FontFamily,
@@ -1231,27 +1232,34 @@ impl AccountingQuestionStudio {
                             ui.add_space(30.0);
                             self.show_status_messages(ui);
 
+                            let title = question_title_presentation(&question);
                             ui.add(
                                 Label::new(
-                                    RichText::new(&question.title)
-                                        .size(26.0)
+                                    RichText::new(&title.title)
+                                        .size(24.0)
                                         .strong()
                                         .color(palette.text),
                                 )
                                 .wrap(),
                             );
-                            ui.add_space(13.0);
+                            ui.add_space(10.0);
                             ui.horizontal_wrapped(|ui| {
+                                if let Some(objective) = &title.learning_objective {
+                                    metadata_badge(ui, objective, palette);
+                                }
+                                if let Some(verification) = &title.verification {
+                                    metadata_badge(ui, verification, palette);
+                                }
                                 ui.label(
                                     RichText::new(format!("▧  {}", shell_label(question.shell)))
-                                        .size(13.0)
+                                        .size(11.0)
                                         .color(palette.muted),
                                 );
                                 if !question.source_name.trim().is_empty() {
                                     ui.label(RichText::new("|").color(palette.stroke));
                                     ui.label(
                                         RichText::new(format!("▤  {}", question.source_name))
-                                            .size(13.0)
+                                            .size(11.0)
                                             .color(palette.muted),
                                     );
                                 }
@@ -1495,7 +1503,26 @@ impl AccountingQuestionStudio {
                     });
                 });
                 ui.add_space(16.0);
-                render_markdown(ui, &part.prompt_markdown, palette, 13.0);
+                let prompt = prompt_presentation(&part.prompt_markdown);
+                render_markdown(ui, &prompt.body, palette, 13.0);
+                if !prompt.import_details.is_empty() {
+                    ui.add_space(10.0);
+                    egui::CollapsingHeader::new(
+                        RichText::new("Source details")
+                            .size(11.0)
+                            .color(palette.muted),
+                    )
+                    .id_salt(("source_details", &key))
+                    .show(ui, |ui| {
+                        ui.spacing_mut().item_spacing.y = 5.0;
+                        for (label, value) in &prompt.import_details {
+                            ui.horizontal_wrapped(|ui| {
+                                ui.label(RichText::new(format!("{label}:")).size(10.0).strong());
+                                ui.label(RichText::new(value).size(10.0).color(palette.muted));
+                            });
+                        }
+                    });
+                }
                 ui.add_space(16.0);
                 ui.separator();
                 ui.add_space(16.0);
@@ -3232,6 +3259,16 @@ fn inspector_value_row(
     });
 }
 
+fn metadata_badge(ui: &mut egui::Ui, text: &str, palette: Palette) {
+    Frame::new()
+        .fill(palette.raised)
+        .corner_radius(6)
+        .inner_margin(Margin::symmetric(7, 3))
+        .show(ui, |ui| {
+            ui.label(RichText::new(text).size(10.0).color(palette.muted));
+        });
+}
+
 fn grade_banner(ui: &mut egui::Ui, result: &GradeResult, palette: Palette) {
     let (color, soft, icon, title) = match result.status {
         GradeStatus::Correct => (palette.green, palette.green_soft, "✓", "Correct"),
@@ -3305,9 +3342,10 @@ fn prewarm_question_text(
     content_width: f32,
     palette: Palette,
 ) {
+    let display_title = question_title_presentation(question);
     let _ = egui::WidgetText::from(
-        RichText::new(&question.title)
-            .size(26.0)
+        RichText::new(&display_title.title)
+            .size(24.0)
             .strong()
             .color(palette.text),
     )
@@ -3326,9 +3364,10 @@ fn prewarm_question_text(
         (content_width - 36.0).max(1.0),
     );
     for part in &question.parts {
+        let prompt = prompt_presentation(&part.prompt_markdown);
         prewarm_regular_markdown_lines(
             ui.ctx(),
-            &part.prompt_markdown,
+            &prompt.body,
             palette,
             13.0,
             (content_width - 40.0).max(1.0),

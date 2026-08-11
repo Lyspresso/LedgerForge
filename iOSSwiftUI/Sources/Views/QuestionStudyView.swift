@@ -254,7 +254,8 @@ private struct QuestionWorkColumn: View {
             )
             PartPromptSection(
                 partID: part.id,
-                prompt: part.promptMarkdown,
+                prompt: part.promptPresentation.body,
+                importDetails: part.promptPresentation.importDetails,
                 kind: part.kind,
                 format: part.format,
                 points: part.points
@@ -409,6 +410,7 @@ private struct ScenarioSheet: View {
 private struct PartPromptSection: View {
     let partID: String
     let prompt: String
+    let importDetails: [(label: String, value: String)]
     let kind: ResponseKind
     let format: QuestionFormat
     let points: Double
@@ -426,6 +428,20 @@ private struct PartPromptSection: View {
                 }
                 MarkdownProse(markdown: prompt, style: .title3)
                     .accessibilityAddTraits(.isHeader)
+                if !importDetails.isEmpty {
+                    DisclosureGroup("Source details") {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(Array(importDetails.enumerated()), id: \.offset) { _, detail in
+                                LabeledContent(detail.label, value: detail.value)
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
                 HStack(spacing: 8) {
                     Text(kind.localizedTitle)
                     Text(format.localizedTitle)

@@ -66,6 +66,34 @@ import Testing
     #expect(question.parts.first?.expected.selections == ["B"])
 }
 
+@Test func legacyTransportHeadingBecomesAReadableQuestionTitle() throws {
+    let markdown = """
+    ### `acct343-c0017-q1` — ORIGINAL-VERIFIED — LO 14-2 — Subsequent measurement schedule (discount amortization) + period-end FVA + disposal under FV-NI
+
+    **LO:** LO 14-2
+    **Concept:** Subsequent measurement schedule (discount amortization) + period-end FVA + disposal under FV-NI
+    **Set position:** Group 17 of 2343 · Question 1 of 2
+    **Set status:** ORIGINAL-VERIFIED
+    **Provenance:** `ACCOUNT343_COMPLETE.md` · source `core_003_q3`
+    **Source-unit handling:** complete cleaned source item
+    > **Derived-verification requirement:** Reconcile every result to the supplied facts.
+
+    ### Q3 — CORE — Discount TS: effective-interest amortized cost, year-end FVA, disposal
+
+    **Scenario:** Westbrook purchases bonds.
+    **Required:** Prepare the entries.
+    **Answer:** Debit the investment and credit cash.
+    """
+
+    let question = try #require(QuestionMarkdownParser.parse(markdown).pack.questions.first)
+    #expect(question.title == "Discount TS: effective-interest amortized cost, year-end FVA, disposal")
+    #expect(question.displayTitle == question.title)
+    #expect(question.titlePresentation.learningObjective == "LO 14-2")
+    #expect(question.titlePresentation.verification == "Original · verified")
+    #expect(question.parts.first?.promptPresentation.body.hasPrefix("**Scenario:** Westbrook") == true)
+    #expect(question.parts.first?.promptPresentation.importDetails.count == 7)
+}
+
 @Test func duplicateLegacyIDsAreRenamedInsteadOfCrashingLibraryMerges() throws {
     let markdown = """
     ## Item 12: First
@@ -81,6 +109,16 @@ import Testing
 
     #expect(result.pack.questions.map(\.id) == ["item-12", "item-12-2"])
     #expect(result.warnings.contains { $0.message.contains("Duplicate legacy id") })
+}
+
+@Test func numberedLegacyItemTitleKeepsOnlyItsReadableSubject() throws {
+    let markdown = """
+    ## Item 12: Classification of the investment
+    **Question:** Which category applies?
+    **Answer:** Trading security.
+    """
+    let question = try #require(QuestionMarkdownParser.parse(markdown).pack.questions.first)
+    #expect(question.title == "Classification of the investment")
 }
 
 @Test func pairedLegacyMultipleChoiceBecomesTwoAnswerableParts() throws {

@@ -13,7 +13,7 @@ struct QuestionSidebar: View {
             List(selection: $store.selectedQuestionID) {
                 ForEach(store.visibleQuestions) { question in
                     QuestionSidebarRow(
-                        title: question.title,
+                        title: question.displayTitle,
                         shell: question.shell,
                         progress: store.progress(for: question)
                     )

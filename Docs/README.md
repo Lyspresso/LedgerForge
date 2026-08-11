@@ -15,6 +15,7 @@ Start with the [suite overview](../README.md), then use the reference that match
 - [MARKDOWN_FORMAT.md](MARKDOWN_FORMAT.md) defines structured Markdown v1, legacy import behavior, editor kinds, and all pedagogical format IDs.
 - [SPREADSHEET.md](SPREADSHEET.md) defines A1 references, formulas, supported functions, and spreadsheet error behavior.
 - [IMPORT_VALIDATION.md](IMPORT_VALIDATION.md) describes importer validation against large private banks and clearly separates structural validation from answer-key review.
+- [ADAPTIVE_TITLES.md](ADAPTIVE_TITLES.md) explains readable title derivation, collapsed source metadata, existing-library compatibility, and the optional Apple Intelligence boundary.
 - [QUESTION_TEMPLATE.md](../Samples/QUESTION_TEMPLATE.md) is the fastest authoring starting point.
 - [ALL_FORMATS_SAMPLE.md](../Samples/ALL_FORMATS_SAMPLE.md) demonstrates every supported response format.
 - [SPREADSHEET_PRACTICE.md](../Samples/SPREADSHEET_PRACTICE.md) demonstrates formula-enabled questions.

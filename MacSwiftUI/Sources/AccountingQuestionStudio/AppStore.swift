@@ -562,6 +562,7 @@ final class AppStore {
         visibleQuestions = questions.filter { question in
             let matchesSearch = query.isEmpty
                 || question.title.localizedStandardContains(query)
+                || question.displayTitle.localizedStandardContains(query)
                 || QuestionIdentity.originalID(from: question.id)
                     .localizedStandardContains(query)
                 || question.sourceName.localizedStandardContains(query)
