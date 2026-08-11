@@ -8,6 +8,7 @@ use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
 use crate::{
@@ -62,6 +63,11 @@ struct LibraryCacheKey {
 }
 
 #[derive(Debug)]
+struct BackgroundSave {
+    handle: JoinHandle<Result<(), String>>,
+}
+
+#[derive(Debug)]
 pub struct StudioModel {
     pub state: AppState,
     pub selected_pack_id: Option<String>,
@@ -72,9 +78,12 @@ pub struct StudioModel {
     pub shell_filter: Option<QuestionShell>,
     pub last_import: Option<ImportSummary>,
     pub last_error: Option<String>,
+    pub last_save_error: Option<String>,
     pub last_saved_at: Option<Instant>,
     store: JsonStateStore,
     dirty_since: Option<Instant>,
+    background_save: Option<BackgroundSave>,
+    background_save_requested: bool,
     attempt_index: BTreeMap<String, String>,
     progress_cache: RefCell<BTreeMap<String, (usize, usize)>>,
     library_revision: u64,
@@ -147,9 +156,12 @@ impl StudioModel {
             shell_filter: None,
             last_import: None,
             last_error: None,
+            last_save_error: None,
             last_saved_at: None,
             store,
             dirty_since: None,
+            background_save: None,
+            background_save_requested: false,
             attempt_index: BTreeMap::new(),
             progress_cache: RefCell::new(BTreeMap::new()),
             library_revision: 0,
@@ -163,6 +175,10 @@ impl StudioModel {
         }
         if model.state.schema_version < crate::CURRENT_SCHEMA_VERSION {
             model.state.schema_version = crate::CURRENT_SCHEMA_VERSION;
+            model.mark_dirty();
+        }
+        if model.prune_blank_attempts() {
+            model.rebuild_attempt_index();
             model.mark_dirty();
         }
         if model.state.packs.is_empty()
@@ -230,7 +246,7 @@ impl StudioModel {
         let mut stored = StoredQuestionPack::imported(result.pack, source_path);
         if let Some(index) = existing_index {
             stored.id.clone_from(&self.state.packs[index].id);
-            self.state.packs[index] = stored.clone();
+            self.state.packs[index] = Arc::new(stored.clone());
         } else {
             self.state.upsert_pack(stored.clone());
         }
@@ -338,18 +354,21 @@ impl StudioModel {
             .collect()
     }
 
-    pub fn selected_question(&self) -> Option<AccountingQuestion> {
-        let pack_id = self.selected_pack_id.as_ref()?;
-        let question_id = self.selected_question_id.as_ref()?;
+    pub fn question(&self, pack_id: &str, question_id: &str) -> Option<&AccountingQuestion> {
         self.state
             .packs
             .iter()
-            .find(|pack| &pack.id == pack_id)?
+            .find(|pack| pack.id == pack_id)?
             .pack
             .questions
             .iter()
-            .find(|question| &question.id == question_id)
-            .cloned()
+            .find(|question| question.id == question_id)
+    }
+
+    pub fn selected_question(&self) -> Option<AccountingQuestion> {
+        let pack_id = self.selected_pack_id.as_deref()?;
+        let question_id = self.selected_question_id.as_deref()?;
+        self.question(pack_id, question_id).cloned()
     }
 
     pub fn select_question(&mut self, pack_id: &str, question_id: &str) {
@@ -368,7 +387,9 @@ impl StudioModel {
         self.selected_question_id = Some(question_id.to_owned());
         self.state.preferences.last_pack_id = self.selected_pack_id.clone();
         self.state.preferences.last_question_id = self.selected_question_id.clone();
-        self.mark_dirty();
+        // Selection is intentionally memory-only during navigation. Persisting
+        // it through the full question-bank state used to schedule a large
+        // synchronous autosave for every click. Normal exit still saves it.
     }
 
     pub fn attempt_for(&self, pack_id: &str, question_id: &str) -> Option<&AttemptRecord> {
@@ -550,27 +571,40 @@ impl StudioModel {
         self.dirty_since.is_some()
     }
 
+    pub fn is_save_in_flight(&self) -> bool {
+        self.background_save.is_some()
+    }
+
+    pub fn is_background_save_requested(&self) -> bool {
+        self.background_save_requested
+    }
+
     pub fn save_if_due(&mut self) {
-        if self.state.preferences.autosave_answers
-            && self
-                .dirty_since
-                .is_some_and(|dirty_since| dirty_since.elapsed() >= AUTOSAVE_DELAY)
+        self.finish_background_save(false);
+        let save_due = self
+            .dirty_since
+            .is_some_and(|dirty_since| dirty_since.elapsed() >= AUTOSAVE_DELAY);
+        if self.background_save.is_none()
+            && save_due
+            && (self.state.preferences.autosave_answers || self.background_save_requested)
         {
-            let _ = self.save_now();
+            self.start_background_save();
         }
     }
 
     pub fn save_now(&mut self) -> Result<(), String> {
+        self.finish_background_save(true);
         match self.store.save(&self.state) {
             Ok(()) => {
                 self.dirty_since = None;
+                self.background_save_requested = false;
                 self.last_saved_at = Some(Instant::now());
-                self.last_error = None;
+                self.last_save_error = None;
                 Ok(())
             }
             Err(error) => {
                 let message = format!("Study progress could not be saved: {error}");
-                self.last_error = Some(message.clone());
+                self.last_save_error = Some(message.clone());
                 Err(message)
             }
         }
@@ -579,6 +613,12 @@ impl StudioModel {
     pub fn set_autosave(&mut self, enabled: bool) {
         self.state.preferences.autosave_answers = enabled;
         self.mark_dirty();
+        if !enabled {
+            self.background_save_requested = true;
+            if self.background_save.is_none() {
+                self.start_background_save();
+            }
+        }
     }
 
     pub fn set_reveal_after_check(&mut self, enabled: bool) {
@@ -588,6 +628,56 @@ impl StudioModel {
 
     fn mark_dirty(&mut self) {
         self.dirty_since = Some(Instant::now());
+    }
+
+    fn start_background_save(&mut self) {
+        let snapshot = self.state.clone();
+        let store = self.store.clone();
+        self.dirty_since = None;
+        self.background_save_requested = false;
+        self.background_save = Some(BackgroundSave {
+            handle: thread::spawn(move || store.save(&snapshot).map_err(|error| error.to_string())),
+        });
+    }
+
+    fn finish_background_save(&mut self, wait: bool) {
+        let should_finish = self
+            .background_save
+            .as_ref()
+            .is_some_and(|save| wait || save.handle.is_finished());
+        if !should_finish {
+            return;
+        }
+        let Some(save) = self.background_save.take() else {
+            return;
+        };
+        match save.handle.join() {
+            Ok(Ok(())) => {
+                self.last_saved_at = Some(Instant::now());
+                self.last_save_error = None;
+            }
+            Ok(Err(error)) => {
+                self.last_save_error = Some(format!("Study progress could not be saved: {error}"));
+                self.dirty_since.get_or_insert_with(Instant::now);
+                self.background_save_requested = true;
+            }
+            Err(_) => {
+                self.last_save_error =
+                    Some("The background save worker stopped unexpectedly.".to_owned());
+                self.dirty_since.get_or_insert_with(Instant::now);
+                self.background_save_requested = true;
+            }
+        }
+    }
+
+    fn prune_blank_attempts(&mut self) -> bool {
+        let before = self.state.attempts.len();
+        self.state.attempts.retain(|_, attempt| {
+            !attempt.checked_part_ids.is_empty()
+                || !attempt.self_reviews.is_empty()
+                || attempt.answers.values().any(|answer| !answer.is_blank())
+        });
+        self.state.attempts.len() != before
     }
 
     fn invalidate_library(&mut self) {
@@ -690,6 +780,12 @@ impl StudioModel {
             self.state.preferences.last_pack_id = Some(pack_id);
             self.state.preferences.last_question_id = Some(question_id);
         }
+    }
+}
+
+impl Drop for StudioModel {
+    fn drop(&mut self) {
+        self.finish_background_save(true);
     }
 }
 
@@ -1007,7 +1103,7 @@ Enter one.
             })
             .collect();
         let state = AppState {
-            packs: vec![StoredQuestionPack {
+            packs: vec![Arc::new(StoredQuestionPack {
                 id: "large-pack".to_owned(),
                 pack: QuestionPack {
                     title: "Large bank".to_owned(),
@@ -1015,7 +1111,7 @@ Enter one.
                     ..QuestionPack::default()
                 },
                 ..StoredQuestionPack::default()
-            }],
+            })],
             ..AppState::default()
         };
         let mut model = StudioModel::from_state(test_store("large-cache"), state);
@@ -1028,5 +1124,99 @@ Enter one.
         let filtered = model.filtered_questions();
         assert_eq!(filtered.len(), 1);
         assert!(!Arc::ptr_eq(&first, &filtered));
+    }
+
+    #[test]
+    fn navigation_is_memory_only_and_never_schedules_a_full_bank_save() {
+        let mut model = StudioModel::load(test_store("navigation-no-save"));
+        model.save_now().unwrap();
+        let pack_id = model.state.packs[0].id.clone();
+        let question_id = model.state.packs[0].pack.questions[1].id.clone();
+        let attempts_before = model.state.attempts.len();
+
+        model.select_question(&pack_id, &question_id);
+
+        assert_eq!(
+            model.selected_question_id.as_deref(),
+            Some(question_id.as_str())
+        );
+        assert_eq!(model.state.attempts.len(), attempts_before);
+        assert!(!model.is_dirty());
+        assert!(!model.is_save_in_flight());
+    }
+
+    #[test]
+    fn autosave_snapshots_share_immutable_question_packs() {
+        let model = StudioModel::load(test_store("shared-pack-snapshot"));
+        let snapshot = model.state.clone();
+        assert!(Arc::ptr_eq(&model.state.packs[0], &snapshot.packs[0]));
+    }
+
+    #[test]
+    fn autosave_runs_on_a_background_worker_and_round_trips_progress() {
+        let (mut model, pack_id, question) = number_question_model("background-save");
+        let store = model.store.clone();
+        model.answer_mut(&pack_id, &question.id, "amount").scalar = "42".to_owned();
+        model.touch_attempt(&pack_id, &question.id);
+        model.dirty_since = Some(Instant::now() - AUTOSAVE_DELAY);
+
+        model.save_if_due();
+        assert!(model.is_save_in_flight());
+        model.finish_background_save(true);
+
+        let reloaded = StudioModel::load(store);
+        assert_eq!(
+            reloaded
+                .attempt_for(&pack_id, &question.id)
+                .unwrap()
+                .answers["amount"]
+                .scalar,
+            "42"
+        );
+    }
+
+    #[test]
+    fn disabling_autosave_is_persisted_by_the_background_worker() {
+        let store = test_store("disable-autosave");
+        let mut model = StudioModel::load(store.clone());
+        model.save_now().unwrap();
+
+        model.set_autosave(false);
+        assert!(model.is_save_in_flight());
+        model.finish_background_save(true);
+
+        let reloaded = StudioModel::load(store);
+        assert!(!reloaded.state.preferences.autosave_answers);
+    }
+
+    #[test]
+    fn save_completion_never_erases_a_newer_import_error() {
+        let (mut model, pack_id, question) = number_question_model("error-isolation");
+        model.answer_mut(&pack_id, &question.id, "amount").scalar = "42".to_owned();
+        model.touch_attempt(&pack_id, &question.id);
+        model.dirty_since = Some(Instant::now() - AUTOSAVE_DELAY);
+        model.save_if_due();
+        model.last_error = Some("A newer import failed.".to_owned());
+
+        model.finish_background_save(true);
+
+        assert_eq!(model.last_error.as_deref(), Some("A newer import failed."));
+        assert!(model.last_save_error.is_none());
+    }
+
+    #[test]
+    fn blank_attempts_are_pruned_without_touching_real_work() {
+        let (mut model, pack_id, question) = number_question_model("blank-prune");
+        model.answer_mut(&pack_id, &question.id, "blank");
+        model.answer_mut(&pack_id, &question.id, "amount").scalar = "42".to_owned();
+
+        assert!(!model.prune_blank_attempts());
+        model.answer_mut(&pack_id, "blank-question", "blank");
+        assert!(model.prune_blank_attempts());
+        assert!(model.attempt_for(&pack_id, "blank-question").is_none());
+        assert_eq!(
+            model.attempt_for(&pack_id, &question.id).unwrap().answers["amount"].scalar,
+            "42"
+        );
     }
 }

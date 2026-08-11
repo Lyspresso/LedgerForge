@@ -43,13 +43,13 @@ Record the final workflow run URL: `{{CI_WORKFLOW_RUN_URL}}`
 | Layer | Required evidence |
 |---|---|
 | Shared Swift parser/grader/spreadsheet package | 16 repository-contained tests; `ALL_FORMATS_SAMPLE.md` passes `aqvalidate` |
-| LedgerForge Rust | 53 repository-contained tests; format check; Clippy with `-D warnings`; locked Release build for macOS 11 |
+| LedgerForge Rust | 56 repository-contained tests; format check; Clippy with `-D warnings`; locked Release build for macOS 11 |
 | Optional Rust private-bank QA | 2 read-only test functions, run only with authorized `LEDGERFORGE_QA_*` files |
 | Statement Studio macOS | 11 repository-contained tests plus one optional external-bank test; unsigned generic Release build |
 | Ledger Pocket iOS | 16 repository-contained simulator tests; unsigned generic simulator Release build |
 
 The two optional Rust bank validators are compiled but marked ignored. The ordinary public gate
-therefore reports 53 passed and 2 ignored; an authorized maintainer can run the ignored test target
+therefore reports 56 passed and 2 ignored; an authorized maintainer can run the ignored test target
 with both `LEDGERFORGE_QA_*` paths set. The optional Statement Studio external-bank test is skipped
 when its fixtures are absent.
 

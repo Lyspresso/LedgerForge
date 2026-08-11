@@ -83,7 +83,7 @@ cargo clippy --locked --all-targets -- -D warnings
 MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release --locked
 ```
 
-The public repository has 53 standard Rust tests. Two additional tests in
+The public repository has 56 standard Rust tests. Two additional tests in
 `tests/supplied_bank_qa.rs` are ignored read-only private-bank validations. Run them only when
 `LEDGERFORGE_QA_COMPLETE` and `LEDGERFORGE_QA_NEEDS_HUMAN` point to files you are authorized to
 use:
