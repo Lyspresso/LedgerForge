@@ -16,7 +16,8 @@ use crate::{
     current_unix_ms, grade_question, parse_markdown,
 };
 
-pub const APP_IDENTIFIER: &str = "com.openai.ledgerforge";
+pub const APP_IDENTIFIER: &str = "com.lyspresso.ledgerforge";
+const LEGACY_APP_IDENTIFIER: &str = "com.openai.ledgerforge";
 pub const BUILT_IN_SAMPLE_NAME: &str = "ALL_FORMATS_SAMPLE.md";
 pub const BUILT_IN_SAMPLE: &str = include_str!("../../Samples/ALL_FORMATS_SAMPLE.md");
 const AUTOSAVE_DELAY: Duration = Duration::from_millis(650);
@@ -84,7 +85,20 @@ pub struct StudioModel {
 impl StudioModel {
     pub fn load_standard() -> Self {
         match JsonStateStore::standard_macos(APP_IDENTIFIER) {
-            Ok(store) => Self::load(store),
+            Ok(store) => {
+                if let Err(error) =
+                    JsonStateStore::standard_macos(LEGACY_APP_IDENTIFIER).and_then(|legacy_store| {
+                        store.migrate_if_missing_from(&legacy_store).map(|_| ())
+                    })
+                {
+                    let mut model = Self::load(store);
+                    model.last_error = Some(format!(
+                        "Existing LedgerForge progress could not be migrated automatically: {error}"
+                    ));
+                    return model;
+                }
+                Self::load(store)
+            }
             Err(error) => {
                 let fallback = JsonStateStore::new(
                     std::env::temp_dir().join("ledgerforge-fallback-state.json"),

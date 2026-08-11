@@ -129,11 +129,13 @@ private struct ActivePartInspectorSection: View {
                 }
                 .disabled(!store.canCheck(part: part, in: questionID))
 
-                Button(
-                    revealButtonTitle(isRevealed: isRevealed),
-                    systemImage: isRevealed ? "eye.slash" : "eye"
-                ) {
+                Button {
                     store.toggleReveal(partID: part.id, in: questionID)
+                } label: {
+                    LocalizedSystemLabel(
+                        title: revealButtonTitle(isRevealed: isRevealed),
+                        systemImage: isRevealed ? "eye.slash" : "eye"
+                    )
                 }
             }
 
@@ -178,7 +180,7 @@ private struct InspectorGradeSummary: View {
         let status = result.status == .needsSelfReview && isReviewed
             ? GradeStatus.correct
             : result.status
-        Label(status.localizedName, systemImage: status.systemImage)
+        LocalizedSystemLabel(title: status.localizedName, systemImage: status.systemImage)
             .foregroundStyle(statusColor(for: status))
     }
 
@@ -241,7 +243,7 @@ private struct QuestionTaxonomyInspector: View {
                 LabeledContent("Formats", value: String(localized: "None"))
             } else {
                 ForEach(uniqueFormats, id: \.self) { format in
-                    Label(format.localizedName, systemImage: "tag")
+                    LocalizedSystemLabel(title: format.localizedName, systemImage: "tag")
                 }
             }
 

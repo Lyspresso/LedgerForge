@@ -10,7 +10,7 @@ are saved locally and atomically.
 
 ## Install the packaged app
 
-1. Extract `../Builds/LedgerForge-macOS.zip`.
+1. Download `LedgerForge-macOS.zip` from the repository's [GitHub Releases](https://github.com/Lyspresso/LedgerForge/releases) page, when a release is published, and extract it.
 2. Move `LedgerForge.app` to `/Applications` if you want a conventional installation, or run it
    from the extracted folder.
 3. Because this local build is ad-hoc signed and not notarized, macOS may block the first launch.
@@ -22,10 +22,19 @@ executable. Intel Macs need a source build on Intel or a separately produced uni
 
 ## Run from source
 
-The lockfile and cached dependencies support a fully offline build:
+Install Rust 1.92 or newer, then run from this directory. A clean checkout may download its locked
+dependencies the first time:
 
 ```sh
-cargo run --offline
+cargo run --locked
+```
+
+To prepare for later offline work, fetch the locked dependency set once while online and then add
+`--offline`:
+
+```sh
+cargo fetch --locked
+cargo run --locked --offline
 ```
 
 The release executable produced by Cargo is `target/release/accounting-question-studio`. The
@@ -107,28 +116,46 @@ remains supported.
 The primary state is:
 
 ```text
-~/Library/Application Support/com.openai.ledgerforge/state.json
+~/Library/Application Support/com.lyspresso.ledgerforge/state.json
 ```
 
 The atomic recovery copy is stored beside it as `.state.json.backup`. The files contain imported
 pack content, source paths, attempts, preferences, and the last selection. LedgerForge does not use
-a cloud service. To reset the workspace, quit LedgerForge and move the entire
-`com.openai.ledgerforge` folder somewhere safe before relaunching; keeping that folder is the way
-to preserve or migrate progress.
+a cloud service. On the first 1.0 launch, LedgerForge copies existing pre-1.0 state from
+`com.openai.ledgerforge` when the new location is empty; the legacy files are left untouched. To
+reset the workspace, quit LedgerForge and move the entire `com.lyspresso.ledgerforge` folder
+somewhere safe before relaunching.
 
 ## Verify the source release
 
-Run the complete offline gate from this directory:
+Run the standard gate from this directory. These commands honor `Cargo.lock` and download only
+dependencies that are not already cached:
 
 ```sh
 cargo fmt --check
-cargo test --offline --all-targets
-cargo clippy --offline --all-targets -- -D warnings
-MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release --offline
+cargo test --locked --all-targets
+cargo clippy --locked --all-targets -- -D warnings
+MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release --locked
 ```
 
-The current audited suite contains 55 tests: 33 library tests, 6 desktop tests, 14 import/grading
-integration tests, and 2 complete supplied-bank QA tests.
+After `cargo fetch --locked`, the Cargo commands can also use `--offline`. The standard public suite
+contains 53 tests: 33 library tests, 6 desktop tests, and 14 import/grading integration tests.
+
+Two additional supplied-bank QA tests are ignored by default because their private source files are
+not part of this repository. Run either one explicitly with its required absolute path:
+
+```sh
+LEDGERFORGE_QA_COMPLETE=/absolute/path/ACCOUNT343_COMPLETE.md \
+  cargo test --locked --test supplied_bank_qa \
+  supplied_complete_bank_has_all_3088_questions_and_754_choice_parts -- --ignored --exact --nocapture
+
+LEDGERFORGE_QA_NEEDS_HUMAN=/absolute/path/ACCOUNT343_NEEDS_HUMAN.md \
+  cargo test --locked --test supplied_bank_qa \
+  supplied_human_review_bank_has_all_78_questions_and_9_choice_parts -- --ignored --exact --nocapture
+```
+
+An explicitly requested private-bank test fails with a direct environment-variable error instead
+of silently passing when its source path is absent.
 
 ## Reproduce the macOS package
 
@@ -138,10 +165,10 @@ From `MacRust`, run:
 ./scripts/package-macos.sh --clean
 ```
 
-The script repeats all four quality gates, builds the release with a macOS 11.0 deployment target,
-generates a complete multi-resolution `.icns` from
-`../Shared/Brand/mac-rust-icon.png`, creates the native bundle, copies the quick-start and
-spreadsheet practice pack, ad-hoc signs and verifies the bundle, and creates:
+The script repeats all four locked quality gates, downloading missing dependencies when necessary,
+builds the release with a macOS 11.0 deployment target, generates a complete multi-resolution
+`.icns` from `../Shared/Brand/mac-rust-icon.png`, creates the native bundle, copies the quick-start
+and spreadsheet practice pack, ad-hoc signs and verifies the bundle, and creates:
 
 ```text
 ../Builds/LedgerForge.app

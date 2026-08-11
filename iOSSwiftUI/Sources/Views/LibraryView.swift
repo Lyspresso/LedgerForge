@@ -51,7 +51,10 @@ struct LibraryView: View {
                                     await store.importBundledSample(sample)
                                 }
                             } label: {
-                                Label(sample.title, systemImage: sample.systemImage)
+                                LocalizedSystemLabel(
+                                    title: sample.title,
+                                    systemImage: sample.systemImage
+                                )
                             }
                         }
                     }
@@ -267,14 +270,14 @@ private struct FilterPicker<Value: Hashable & CaseIterable>: View where Value.Al
         Picker(
             selection: $selection,
             content: {
-                Label(allTitle, systemImage: systemImage)
+                LocalizedSystemLabel(title: allTitle, systemImage: systemImage)
                     .tag(nil as Value?)
                 ForEach(Value.allCases, id: \.self) { value in
                     FilterValueLabel(value: value).tag(Optional(value))
                 }
             },
             label: {
-                Label(title, systemImage: systemImage)
+                LocalizedSystemLabel(title: title, systemImage: systemImage)
             }
         )
         .pickerStyle(.menu)
@@ -598,7 +601,10 @@ private struct LibraryQuestionRow: View {
             }
 
             HStack(spacing: 7) {
-                Label(status.localizedTitle, systemImage: status.symbolName)
+                LocalizedSystemLabel(
+                    title: status.localizedTitle,
+                    systemImage: status.symbolName
+                )
                 if let firstFormat {
                     Text(firstFormat.localizedTitle)
                 }

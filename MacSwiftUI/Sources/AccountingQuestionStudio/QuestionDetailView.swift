@@ -1,6 +1,19 @@
 import AccountingQuestionKit
 import SwiftUI
 
+struct LocalizedSystemLabel: View {
+    let title: LocalizedStringResource
+    let systemImage: String
+
+    var body: some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+    }
+}
+
 struct QuestionDetailView: View {
     let store: AppStore
 
@@ -105,7 +118,10 @@ private struct QuestionMetadata: View {
     }
 
     private var shellLabel: some View {
-        Label(shell.localizedName, systemImage: "square.stack.3d.up")
+        LocalizedSystemLabel(
+            title: shell.localizedName,
+            systemImage: "square.stack.3d.up"
+        )
     }
 
     private var sourceLabel: some View {
@@ -341,7 +357,7 @@ private struct PartStatusBadge: View {
         let status = result.status == .needsSelfReview && isSelfReviewed
             ? GradeStatus.correct
             : result.status
-        Label(status.localizedName, systemImage: status.systemImage)
+        LocalizedSystemLabel(title: status.localizedName, systemImage: status.systemImage)
             .font(.caption.weight(.medium))
             .foregroundStyle(status == .correct ? Color.green : .secondary)
             .labelStyle(.iconOnly)
@@ -373,11 +389,12 @@ private struct QuestionPartActionBar: View {
             .buttonStyle(.borderedProminent)
             .disabled(!answerIsReady)
 
-        Button(
-            revealButtonTitle,
-            systemImage: isRevealed ? "eye.slash" : "eye",
-            action: toggleReveal
-        )
+        Button(action: toggleReveal) {
+            LocalizedSystemLabel(
+                title: revealButtonTitle,
+                systemImage: isRevealed ? "eye.slash" : "eye"
+            )
+        }
     }
 
     private var revealButtonTitle: LocalizedStringResource {

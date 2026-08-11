@@ -1,6 +1,19 @@
 import Foundation
 import SwiftUI
 
+struct LocalizedSystemLabel: View {
+    let title: LocalizedStringResource
+    let systemImage: String
+
+    var body: some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+    }
+}
+
 struct StudyBackground: View {
     var body: some View {
         ZStack {
@@ -83,7 +96,7 @@ struct SectionEyebrow: View {
     let systemImage: String
 
     var body: some View {
-        Label(title, systemImage: systemImage)
+        LocalizedSystemLabel(title: title, systemImage: systemImage)
             .font(.caption.smallCaps().weight(.semibold))
             .foregroundStyle(.tint)
             .accessibilityAddTraits(.isHeader)

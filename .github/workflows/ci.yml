@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust / LedgerForge
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install minimum supported Rust with required components
+        uses: dtolnay/rust-toolchain@1.92.0
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: MacRust
+
+      - name: Record toolchain
+        run: |
+          rustc --version --verbose
+          cargo --version
+
+      - name: Fetch locked dependencies
+        working-directory: MacRust
+        run: cargo fetch --locked
+
+      - name: Check formatting
+        working-directory: MacRust
+        run: cargo fmt --check
+
+      - name: Run 53 standard tests (2 private-bank tests stay ignored)
+        working-directory: MacRust
+        run: cargo test --locked --all-targets
+
+      - name: Lint with warnings denied
+        working-directory: MacRust
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: Build release for the supported deployment floor
+        working-directory: MacRust
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+        run: cargo build --release --locked
+
+  swift-package:
+    name: Swift / AccountingQuestionKit
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Record Apple toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Run shared package tests
+        run: swift test --package-path Shared/AccountingQuestionKit
+
+      - name: Validate the public all-formats sample
+        run: >-
+          swift run --package-path Shared/AccountingQuestionKit aqvalidate
+          Samples/ALL_FORMATS_SAMPLE.md
+
+  macos-app:
+    name: macOS / Statement Studio
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # The generated project is intentionally committed. Build that exact project in CI;
+      # contributors regenerate and commit it whenever project.yml changes.
+      - name: Verify checked-in project is present
+        run: |
+          test -f MacSwiftUI/project.yml
+          test -f MacSwiftUI/AccountingQuestionStudio.xcodeproj/project.pbxproj
+          xcodebuild -version
+
+      - name: Test Statement Studio
+        run: |
+          xcodebuild \
+            -project MacSwiftUI/AccountingQuestionStudio.xcodeproj \
+            -scheme AccountingQuestionStudio \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/StatementStudioTests" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            clean test
+
+      - name: Build unsigned release configuration
+        run: |
+          xcodebuild \
+            -project MacSwiftUI/AccountingQuestionStudio.xcodeproj \
+            -scheme AccountingQuestionStudio \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/StatementStudioRelease" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            clean build
+
+  ios-app:
+    name: iOS / Ledger Pocket
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Do not regenerate in CI: the checked-in project is the build input distributed to users.
+      - name: Verify checked-in project is present
+        run: |
+          test -f iOSSwiftUI/project.yml
+          test -f iOSSwiftUI/AccountingQuestionSuite.xcodeproj/project.pbxproj
+          xcodebuild -version
+
+      - name: Select an available iPhone simulator
+        id: simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          device_id="$(xcrun simctl list devices available --json | /usr/bin/python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin).get("devices", {})
+          candidates = [
+              device
+              for runtime in devices.values()
+              for device in runtime
+              if device.get("isAvailable") and device.get("name", "").startswith("iPhone")
+          ]
+          print(candidates[0].get("udid", "") if candidates else "")
+          ')"
+          if [[ -z "$device_id" ]]; then
+            echo "No available iPhone simulator was found." >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "id=$device_id" >> "$GITHUB_OUTPUT"
+          echo "Using simulator $device_id"
+
+      - name: Test Ledger Pocket
+        run: |
+          xcodebuild \
+            -project iOSSwiftUI/AccountingQuestionSuite.xcodeproj \
+            -scheme AccountingQuestionSuite \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.id }}' \
+            -derivedDataPath "$RUNNER_TEMP/LedgerPocketTests" \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            clean test
+
+      - name: Build unsigned simulator release configuration
+        run: |
+          xcodebuild \
+            -project iOSSwiftUI/AccountingQuestionSuite.xcodeproj \
+            -scheme AccountingQuestionSuite \
+            -configuration Release \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/LedgerPocketRelease" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            clean build

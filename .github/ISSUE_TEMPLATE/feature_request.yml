@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose an improvement to the study experience or authoring contract
+title: "[Feature]: "
+body:
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - All applications / shared contract
+        - LedgerForge (Rust macOS)
+        - Statement Studio (SwiftUI macOS)
+        - Ledger Pocket (iOS/iPadOS)
+        - Markdown authoring or spreadsheet formulas
+        - Documentation, testing, or packaging
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the user or author need without assuming a particular implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed experience
+      description: Explain the desired behavior, including an example workflow if useful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Cross-app and compatibility considerations
+      description: Note effects on Markdown portability, stable IDs, saved attempts, grading, accessibility, privacy, or platform support.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I searched existing issues and discussions for a similar request.
+          required: true
+        - label: The example contains no proprietary question-bank material or student data.
+          required: true

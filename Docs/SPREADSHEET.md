@@ -55,14 +55,17 @@ For `PV`, `FV`, and `PMT`, `type` is `0` for end-of-period payments and `1` for 
 
 ## Errors
 
-Formula errors are displayed in the grid and never crash the app:
+Formula errors are displayed in the grid and never crash the app. All three apps distinguish these
+core errors:
 
 - `#REF!` — cell outside the grid
 - `#VALUE!` — wrong value or argument shape
 - `#DIV/0!` — division or average by zero
-- `#NAME?` — unsupported function or name
 - `#CYCLE!` — circular cell reference
-- `#NUM!` — invalid or non-finite numerical result
-- `#PARSE!` — malformed formula
+
+Statement Studio and Ledger Pocket additionally report `#NAME?` for an unsupported function or
+name, `#NUM!` for an invalid or non-finite numerical result, and `#PARSE!` for malformed syntax.
+LedgerForge currently groups those three cases under `#VALUE!`. Correct formulas and evaluated
+numeric results remain portable; only this diagnostic category is broader in the Rust app.
 
 The engine is intentionally a focused study spreadsheet, not a full Excel clone. It covers the calculations used by the included intermediate-accounting formats while keeping attempts portable and deterministic across all three apps.

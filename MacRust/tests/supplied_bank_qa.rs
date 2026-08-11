@@ -12,9 +12,11 @@ fn exercise_bank(
     expected_long_text: usize,
     expected_unverified: usize,
 ) {
-    let Some(path) = std::env::var_os(variable) else {
-        return;
-    };
+    let path = std::env::var_os(variable).unwrap_or_else(|| {
+        panic!(
+            "{variable} is required for this ignored QA test; set it to the absolute path of the corresponding private Markdown bank and rerun the test"
+        )
+    });
     let path = Path::new(&path);
     let started = Instant::now();
     let markdown = std::fs::read_to_string(path)
@@ -68,11 +70,13 @@ fn exercise_bank(
 }
 
 #[test]
+#[ignore = "requires LEDGERFORGE_QA_COMPLETE to point to the private complete question bank"]
 fn supplied_complete_bank_has_all_3088_questions_and_754_choice_parts() {
     exercise_bank("LEDGERFORGE_QA_COMPLETE", 3_088, 754, 2_474, 0);
 }
 
 #[test]
+#[ignore = "requires LEDGERFORGE_QA_NEEDS_HUMAN to point to the private human-review question bank"]
 fn supplied_human_review_bank_has_all_78_questions_and_9_choice_parts() {
     exercise_bank("LEDGERFORGE_QA_NEEDS_HUMAN", 78, 9, 71, 2);
 }

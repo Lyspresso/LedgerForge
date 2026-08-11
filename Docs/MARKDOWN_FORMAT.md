@@ -2,6 +2,23 @@
 
 The three apps import ordinary `.md` files. Structured files receive specialized editors and automatic grading; existing textbook-style Markdown is also accepted through a legacy importer.
 
+[Documentation index](README.md) · [Suite overview](../README.md) · [Question template](../Samples/QUESTION_TEMPLATE.md) · [Spreadsheet reference](SPREADSHEET.md)
+
+## Fastest authoring path
+
+1. Copy [Samples/QUESTION_TEMPLATE.md](../Samples/QUESTION_TEMPLATE.md) to a new UTF-8 Markdown file.
+2. Give every question and part a stable ID. Question IDs must be unique within the file, and part IDs must be unique within their question. Do not change them after learners have begun work, because the apps use them to reconnect saved attempts.
+3. Choose a `kind` from the editor table below and a pedagogical `format` from the format-ID table.
+4. Put the expected response in `### Answer`, add grading settings or accepted alternatives where needed, and close every part and question directive.
+5. Validate the finished pack from the repository root, then import it into any of the three apps:
+
+```sh
+cd Shared/AccountingQuestionKit
+swift run aqvalidate ../../path/to/questions.md
+```
+
+The validator checks structure and import compatibility; it cannot establish that an accounting answer key is substantively correct. Review answer keys and rubrics separately.
+
 ## Minimal structured question
 
 ```markdown
@@ -170,3 +187,12 @@ Use one of these values in a part’s `format=` attribute. A question’s `forma
 | `matching_mapping_sorting` | Matching, mapping, or sorting |
 | `codification_research` | Research navigation, citation, or memo |
 | `ais_source_document_flow` | Source document, journal, posting, and AIS flow |
+
+## Related references
+
+- [QUESTION_TEMPLATE.md](../Samples/QUESTION_TEMPLATE.md) — smallest practical starting file.
+- [ALL_FORMATS_SAMPLE.md](../Samples/ALL_FORMATS_SAMPLE.md) — one working question for every supported response format.
+- [SPREADSHEET_PRACTICE.md](../Samples/SPREADSHEET_PRACTICE.md) — formula and grid examples.
+- [SPREADSHEET.md](SPREADSHEET.md) — complete formula grammar and function behavior.
+- [IMPORT_VALIDATION.md](IMPORT_VALIDATION.md) — importer validation scope and limitations.
+- [LedgerForge](../MacRust/README.md), [Statement Studio](../MacSwiftUI/README.md), and [Ledger Pocket](../iOSSwiftUI/README.md) — platform-specific import workflows.
