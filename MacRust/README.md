@@ -97,11 +97,13 @@ remains supported.
   honest self-review for judgment work.
 - Editors for single choice, select-all, number, formula, short text, long text, journal entries,
   schedules/tables, matching, ordering, true/false corrections, and entry/no-entry rationales.
-- On macOS 26 and newer, the floating toolbar groups, tinted library sidebar, and tinted inspector
-  use Apple's public `NSGlassEffectView` `Regular` material in separate
-  `NSGlassEffectContainerView` batches. macOS 11–25 use semantic `NSVisualEffectView` pane
-  fallbacks; Reduce Transparency switches the structural panes to opaque surfaces, and Increase
-  Contrast strengthens their text, cards, and separators.
+- Large imported banks remain immutable and shared in memory; question navigation never performs
+  filesystem work, and coalesced progress autosaves encode and sync on a background worker.
+- On macOS 26 and newer, floating toolbar groups use Apple's public `NSGlassEffectView` `Regular`
+  material. The untinted library and inspector use semantic, behind-window `NSVisualEffectView`
+  materials on every supported macOS version so the desktop and other apps remain visibly blurred
+  through them. Reduce Transparency switches those panes to opaque surfaces, and Increase Contrast
+  strengthens their text, cards, and separators.
 - System light/dark appearance, AccessKit semantics, visible control labels, and local autosave.
 
 ## Keyboard shortcuts

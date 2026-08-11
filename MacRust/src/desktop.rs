@@ -18,14 +18,14 @@ use raw_window_handle::HasWindowHandle as _;
 
 const APP_TITLE: &str = "LedgerForge — Accounting Question Studio";
 pub(crate) const TOOLBAR_GLASS_REGION_COUNT: usize = 4;
-pub(crate) const STRUCTURAL_GLASS_REGION_COUNT: usize = 2;
+pub(crate) const STRUCTURAL_MATERIAL_REGION_COUNT: usize = 2;
 const LIBRARY_GLASS_REGION_INDEX: usize = 0;
 const INSPECTOR_GLASS_REGION_INDEX: usize = 1;
 
 #[derive(Debug, Clone, Copy, Default)]
 struct WorkspaceGlassRegions {
     toolbar: [Option<egui::Rect>; TOOLBAR_GLASS_REGION_COUNT],
-    structural: [Option<egui::Rect>; STRUCTURAL_GLASS_REGION_COUNT],
+    structural: [Option<egui::Rect>; STRUCTURAL_MATERIAL_REGION_COUNT],
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -59,14 +59,14 @@ impl Palette {
         if dark {
             Self {
                 canvas: rgba_or_rgb(33, 34, 45, 242, translucent),
-                sidebar: Color32::from_rgb(34, 40, 66),
-                inspector: Color32::from_rgb(36, 38, 60),
+                sidebar: Color32::from_rgb(36, 36, 40),
+                inspector: Color32::from_rgb(39, 39, 43),
                 toolbar: rgba_or_rgb(39, 41, 65, 194, translucent),
                 card: rgba_or_rgb(33, 34, 45, 238, translucent),
                 structural_card: if translucent {
                     Color32::from_rgba_unmultiplied(255, 255, 255, 14)
                 } else {
-                    Color32::from_rgb(43, 45, 66)
+                    Color32::from_rgb(44, 44, 46)
                 },
                 raised: rgba_or_rgb(255, 255, 255, 18, translucent),
                 hover: rgba_or_rgb(255, 255, 255, 28, translucent),
@@ -88,8 +88,8 @@ impl Palette {
         } else {
             Self {
                 canvas: rgba_or_rgb(248, 248, 250, 246, translucent),
-                sidebar: Color32::from_rgb(236, 241, 249),
-                inspector: Color32::from_rgb(242, 243, 249),
+                sidebar: Color32::from_rgb(246, 246, 248),
+                inspector: Color32::from_rgb(248, 248, 250),
                 toolbar: rgba_or_rgb(249, 249, 252, 196, translucent),
                 card: rgba_or_rgb(248, 248, 250, 241, translucent),
                 structural_card: rgba_or_rgb(249, 250, 252, 140, translucent),
@@ -403,7 +403,7 @@ impl AccountingQuestionStudio {
         palette
     }
 
-    fn structural_pane_fill(&self, palette: Palette, dark: bool, inspector: bool) -> Color32 {
+    fn structural_pane_fill(&self, palette: Palette, inspector: bool) -> Color32 {
         if self.native_increased_contrast || !self.native_structural_material_active {
             return if inspector {
                 palette.inspector
@@ -411,26 +411,13 @@ impl AccountingQuestionStudio {
                 palette.sidebar
             };
         }
-        if self.native_glass_active {
-            return Color32::TRANSPARENT;
-        }
-        if dark {
-            if inspector {
-                Color32::from_rgba_unmultiplied(37, 40, 66, 104)
-            } else {
-                Color32::from_rgba_unmultiplied(34, 42, 74, 116)
-            }
-        } else if inspector {
-            Color32::from_rgba_unmultiplied(239, 241, 248, 112)
-        } else {
-            Color32::from_rgba_unmultiplied(232, 238, 249, 120)
-        }
+        Color32::TRANSPARENT
     }
 
     fn structural_card_fill(&self, palette: Palette, dark: bool) -> Color32 {
         if self.native_increased_contrast || !self.native_structural_material_active {
             if dark {
-                Color32::from_rgb(43, 45, 66)
+                Color32::from_rgb(44, 44, 46)
             } else {
                 Color32::from_rgb(249, 250, 252)
             }
@@ -546,10 +533,7 @@ impl AccountingQuestionStudio {
     fn save_now(&mut self) {
         self.flash_message = match self.model.save_now() {
             Ok(()) => Some("Study progress saved locally.".to_owned()),
-            Err(error) => {
-                self.model.last_error = Some(error);
-                None
-            }
+            Err(_) => None,
         };
     }
 
@@ -1246,18 +1230,23 @@ impl AccountingQuestionStudio {
 
     fn show_status_messages(&mut self, ui: &mut egui::Ui) {
         let palette = self.palette(ui);
-        if let Some(error) = &self.model.last_error {
+        for (title, error) in [
+            (
+                "Import or loading problem",
+                self.model.last_error.as_deref(),
+            ),
+            ("Save problem", self.model.last_save_error.as_deref()),
+        ] {
+            let Some(error) = error else {
+                continue;
+            };
             Frame::new()
                 .fill(palette.red_soft)
                 .stroke(Stroke::new(1.0, palette.red))
                 .corner_radius(9)
                 .inner_margin(12)
                 .show(ui, |ui| {
-                    ui.label(
-                        RichText::new("Import or save problem")
-                            .strong()
-                            .color(palette.red),
-                    );
+                    ui.label(RichText::new(title).strong().color(palette.red));
                     ui.label(RichText::new(error).color(palette.text));
                 });
             ui.add_space(8.0);
@@ -1379,8 +1368,17 @@ impl AccountingQuestionStudio {
                 ui.add_space(16.0);
 
                 let changed = {
-                    let answer = self.model.answer_mut(pack_id, &question.id, &part.id);
-                    draw_response_editor(ui, part, answer, palette, &key)
+                    let mut answer = self
+                        .model
+                        .attempt_for(pack_id, &question.id)
+                        .and_then(|attempt| attempt.answers.get(&part.id))
+                        .cloned()
+                        .unwrap_or_default();
+                    let changed = draw_response_editor(ui, part, &mut answer, palette, &key);
+                    if changed {
+                        *self.model.answer_mut(pack_id, &question.id, &part.id) = answer;
+                    }
+                    changed
                 };
                 if changed {
                     self.active_part = part_index;
@@ -1811,8 +1809,7 @@ impl AccountingQuestionStudio {
         };
 
         if self.library_visible {
-            let library_fill =
-                self.structural_pane_fill(structural_palette, root.visuals().dark_mode, false);
+            let library_fill = self.structural_pane_fill(structural_palette, false);
             let library_panel = Panel::left("library_panel")
                 .default_size(if compact_width { 210.0 } else { 270.0 })
                 .size_range(if compact_width {
@@ -1833,8 +1830,7 @@ impl AccountingQuestionStudio {
 
         let show_review = self.review_visible && !compact_width && self.selection_is_visible();
         if show_review {
-            let inspector_fill =
-                self.structural_pane_fill(structural_palette, root.visuals().dark_mode, true);
+            let inspector_fill = self.structural_pane_fill(structural_palette, true);
             let review_panel = Panel::right("review_panel")
                 .default_size(280.0)
                 .size_range(240.0..=400.0)
@@ -1860,6 +1856,12 @@ impl eframe::App for AccountingQuestionStudio {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.model.save_if_due();
         if self.model.is_dirty() && self.model.state.preferences.autosave_answers {
+            ctx.request_repaint_after(Duration::from_millis(700));
+        }
+        if self.model.is_save_in_flight() {
+            ctx.request_repaint_after(Duration::from_millis(50));
+        }
+        if self.model.is_background_save_requested() {
             ctx.request_repaint_after(Duration::from_millis(700));
         }
         #[cfg(target_os = "macos")]
@@ -2369,12 +2371,10 @@ fn draw_table_editor(
     if answer.rows.is_empty() {
         let initial_rows = part.expected.rows.len().max(2);
         answer.rows = vec![vec![String::new(); column_count]; initial_rows];
-        changed = true;
     }
     for row in &mut answer.rows {
         if row.len() < column_count {
             row.resize(column_count, String::new());
-            changed = true;
         }
     }
     let evaluated = evaluate_grid(&answer.rows);
@@ -3506,6 +3506,29 @@ mod tests {
         });
         assert!(answer.order.is_empty());
         assert!(answer.is_blank());
+    }
+
+    #[test]
+    fn merely_viewing_journal_and_table_editors_does_not_submit_an_answer() {
+        for kind in [ResponseKind::Journal, ResponseKind::Table] {
+            let part = QuestionPart {
+                id: kind.as_str().to_owned(),
+                kind,
+                ..QuestionPart::default()
+            };
+            let mut answer = StudentAnswer::default();
+            egui::__run_test_ui(|ui| {
+                let changed = draw_response_editor(
+                    ui,
+                    &part,
+                    &mut answer,
+                    Palette::for_dark(false, false),
+                    "blank-grid-test",
+                );
+                assert!(!changed);
+            });
+            assert!(answer.is_blank());
+        }
     }
 
     #[test]

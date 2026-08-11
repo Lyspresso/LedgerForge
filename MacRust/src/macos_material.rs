@@ -1,10 +1,10 @@
 //! Small, public-AppKit-only bridge for native macOS window materials.
 //!
-//! `NSVisualEffectView` provides semantic structural materials on every macOS
-//! version LedgerForge supports. On macOS 26 and newer, documented
-//! `NSGlassEffectView` instances provide Liquid Glass under the floating toolbar,
-//! navigation sidebar, and inspector. We avoid undocumented material values and
-//! selectors entirely.
+//! Pane-shaped `NSVisualEffectView` instances use behind-window blending so the
+//! library and inspector visibly react to the desktop and other apps on every
+//! macOS version LedgerForge supports. On macOS 26 and newer, documented
+//! `NSGlassEffectView` instances provide Liquid Glass under the floating toolbar.
+//! We avoid undocumented material values and selectors entirely.
 
 use std::ffi::CStr;
 use std::fmt;
@@ -21,10 +21,7 @@ use objc2_app_kit::{
 use objc2_foundation::{NSPoint, NSRect, NSSize};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 
-use crate::desktop::{STRUCTURAL_GLASS_REGION_COUNT, TOOLBAR_GLASS_REGION_COUNT};
-
-const LIBRARY_TINT_ALPHA: f64 = 0.30;
-const INSPECTOR_TINT_ALPHA: f64 = 0.24;
+use crate::desktop::{STRUCTURAL_MATERIAL_REGION_COUNT, TOOLBAR_GLASS_REGION_COUNT};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GlassRect {
@@ -67,9 +64,8 @@ pub struct SystemMaterial {
     _toolbar: Retained<NSToolbar>,
     _container: Retained<NSView>,
     _backdrop: Retained<NSVisualEffectView>,
-    structural_fallback_views: Vec<Retained<NSVisualEffectView>>,
+    structural_material_views: Vec<Retained<NSVisualEffectView>>,
     toolbar_glass: Option<GlassBatch>,
-    structural_glass: Option<GlassBatch>,
 }
 
 #[derive(Debug)]
@@ -114,6 +110,8 @@ pub fn install_system_material(
     // insets for the current macOS release and titlebar layout direction. The
     // toolbar has no items, so hit testing continues through to egui's controls.
     let native_window = root_view.window().ok_or(MaterialError::UnsupportedWindow)?;
+    native_window.setOpaque(false);
+    native_window.setBackgroundColor(Some(&NSColor::clearColor()));
     let toolbar = native_window.toolbar().unwrap_or_else(|| {
         let toolbar = NSToolbar::init(main_thread.alloc());
         native_window.setToolbar(Some(&toolbar));
@@ -145,9 +143,9 @@ pub fn install_system_material(
         Some(root_view),
     );
 
-    let structural_fallback_views = [
+    let structural_material_views = [
         NSVisualEffectMaterial::Sidebar,
-        NSVisualEffectMaterial::ContentBackground,
+        NSVisualEffectMaterial::UnderWindowBackground,
     ]
     .into_iter()
     .map(|material| {
@@ -165,37 +163,16 @@ pub fn install_system_material(
     })
     .collect();
 
-    let (toolbar_glass, structural_glass) = if liquid_glass_classes_are_available() {
-        let toolbar_batch = create_glass_batch(
-            main_thread,
-            root_view.frame(),
-            TOOLBAR_GLASS_REGION_COUNT,
-            &[],
+    let toolbar_glass = if liquid_glass_classes_are_available() {
+        let batch = create_glass_batch(main_thread, root_view.frame(), TOOLBAR_GLASS_REGION_COUNT);
+        container.addSubview_positioned_relativeTo(
+            &batch.container,
+            NSWindowOrderingMode::Below,
+            Some(root_view),
         );
-        let accent = NSColor::controlAccentColor();
-        let structural_tints = [
-            accent.colorWithAlphaComponent(LIBRARY_TINT_ALPHA),
-            accent.colorWithAlphaComponent(INSPECTOR_TINT_ALPHA),
-        ];
-        let structural_batch = create_glass_batch(
-            main_thread,
-            root_view.frame(),
-            STRUCTURAL_GLASS_REGION_COUNT,
-            &structural_tints,
-        );
-
-        // Keep the structural panes and toolbar pills in distinct containers so
-        // the system never merges a full-height pane into a nearby toolbar shape.
-        for batch in [&structural_batch, &toolbar_batch] {
-            container.addSubview_positioned_relativeTo(
-                &batch.container,
-                NSWindowOrderingMode::Below,
-                Some(root_view),
-            );
-        }
-        (Some(toolbar_batch), Some(structural_batch))
+        Some(batch)
     } else {
-        (None, None)
+        None
     };
 
     Ok(SystemMaterial {
@@ -203,9 +180,8 @@ pub fn install_system_material(
         _toolbar: toolbar,
         _container: container,
         _backdrop: effect_view,
-        structural_fallback_views,
+        structural_material_views,
         toolbar_glass,
-        structural_glass,
     })
 }
 
@@ -213,12 +189,7 @@ fn zero_rect() -> NSRect {
     NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(0.0, 0.0))
 }
 
-fn create_glass_batch(
-    main_thread: MainThreadMarker,
-    frame: NSRect,
-    count: usize,
-    tints: &[Retained<NSColor>],
-) -> GlassBatch {
+fn create_glass_batch(main_thread: MainThreadMarker, frame: NSRect, count: usize) -> GlassBatch {
     let container = NSGlassEffectContainerView::initWithFrame(main_thread.alloc(), frame);
     container.setAutoresizingMask(
         NSAutoresizingMaskOptions::ViewWidthSizable | NSAutoresizingMaskOptions::ViewHeightSizable,
@@ -231,12 +202,9 @@ fn create_glass_batch(
     container.setContentView(Some(&content));
 
     let views = (0..count)
-        .map(|index| {
+        .map(|_| {
             let glass = NSGlassEffectView::initWithFrame(main_thread.alloc(), zero_rect());
             glass.setStyle(NSGlassEffectViewStyle::Regular);
-            if let Some(tint) = tints.get(index) {
-                glass.setTintColor(Some(tint));
-            }
             glass.setCornerRadius(18.0);
             glass.setHidden(true);
             let foreground = NSView::initWithFrame(main_thread.alloc(), glass.bounds());
@@ -264,10 +232,6 @@ impl SystemMaterial {
         self.toolbar_glass
             .as_ref()
             .is_some_and(|batch| batch.views.len() == TOOLBAR_GLASS_REGION_COUNT)
-            && self
-                .structural_glass
-                .as_ref()
-                .is_some_and(|batch| batch.views.len() == STRUCTURAL_GLASS_REGION_COUNT)
     }
 
     /// Current system accessibility and material availability state.
@@ -275,7 +239,7 @@ impl SystemMaterial {
         let (reduce_transparency, increased_contrast) = accessibility_display_options();
         material_state(
             self.liquid_glass_available(),
-            self.structural_fallback_views.len() == STRUCTURAL_GLASS_REGION_COUNT,
+            self.structural_material_views.len() == STRUCTURAL_MATERIAL_REGION_COUNT,
             reduce_transparency,
             increased_contrast,
         )
@@ -284,12 +248,12 @@ impl SystemMaterial {
     /// Updates native material geometry after egui has laid out the workspace.
     ///
     /// Reduce Transparency hides every native effect; callers then paint the
-    /// panes with opaque semantic fallback colors. Older systems use retained
-    /// `NSVisualEffectView` panes instead of attempting to call macOS 26 APIs.
+    /// panes with opaque semantic fallback colors. Structural panes use
+    /// behind-window `NSVisualEffectView` on every supported macOS version.
     pub fn update_native_materials(
         &self,
         toolbar_regions: [Option<GlassRect>; TOOLBAR_GLASS_REGION_COUNT],
-        structural_regions: [Option<GlassRect>; STRUCTURAL_GLASS_REGION_COUNT],
+        structural_regions: [Option<GlassRect>; STRUCTURAL_MATERIAL_REGION_COUNT],
         viewport_width: f32,
         viewport_height: f32,
     ) -> NativeMaterialState {
@@ -298,13 +262,10 @@ impl SystemMaterial {
         if let Some(batch) = &self.toolbar_glass {
             batch.container.setHidden(!glass_visible);
         }
-        if let Some(batch) = &self.structural_glass {
-            batch.container.setHidden(!glass_visible);
-        }
         self._backdrop.setHidden(state.reduce_transparency);
-        let fallback_visible = state.structural_material_visible && !glass_visible;
-        for view in &self.structural_fallback_views {
-            view.setHidden(!fallback_visible);
+        let structural_visible = state.structural_material_visible;
+        for view in &self.structural_material_views {
+            view.setHidden(!structural_visible);
         }
 
         if viewport_width <= 0.0 || viewport_height <= 0.0 {
@@ -320,30 +281,19 @@ impl SystemMaterial {
         let scale_x = bounds.size.width / f64::from(viewport_width);
         let scale_y = bounds.size.height / f64::from(viewport_height);
 
-        if glass_visible {
-            if let Some(batch) = &self.toolbar_glass {
-                self.update_glass_batch(
-                    batch,
-                    &toolbar_regions,
-                    scale_x,
-                    scale_y,
-                    toolbar_corner_radius,
-                );
-            }
-            if let Some(batch) = &self.structural_glass {
-                self.update_glass_batch(
-                    batch,
-                    &structural_regions,
-                    scale_x,
-                    scale_y,
-                    structural_corner_radius,
-                );
-            }
+        if glass_visible && let Some(batch) = &self.toolbar_glass {
+            self.update_glass_batch(
+                batch,
+                &toolbar_regions,
+                scale_x,
+                scale_y,
+                toolbar_corner_radius,
+            );
         }
 
-        if fallback_visible {
+        if structural_visible {
             for (view, region) in self
-                .structural_fallback_views
+                .structural_material_views
                 .iter()
                 .zip(structural_regions)
             {
@@ -381,16 +331,13 @@ impl SystemMaterial {
     }
 
     fn hide_native_regions(&self) {
-        for batch in [&self.toolbar_glass, &self.structural_glass]
-            .into_iter()
-            .flatten()
-        {
+        for batch in [&self.toolbar_glass].into_iter().flatten() {
             batch.container.setHidden(true);
             for view in &batch.views {
                 view.setHidden(true);
             }
         }
-        for view in &self.structural_fallback_views {
+        for view in &self.structural_material_views {
             view.setHidden(true);
         }
     }
@@ -417,16 +364,6 @@ impl SystemMaterial {
 
 fn toolbar_corner_radius(_index: usize, height: f64) -> f64 {
     height / 2.0
-}
-
-fn structural_corner_radius(index: usize, height: f64) -> f64 {
-    if index == 0 {
-        // The navigation sidebar floats as a pane; the inspector remains
-        // edge-to-edge to reflect its closer relationship to edited content.
-        18.0_f64.min(height / 2.0)
-    } else {
-        0.0
-    }
 }
 
 fn renderer_space_rect(
@@ -466,13 +403,13 @@ fn accessibility_display_options() -> (bool, bool) {
 
 fn material_state(
     liquid_glass_available: bool,
-    structural_fallback_available: bool,
+    structural_material_available: bool,
     reduce_transparency: bool,
     increased_contrast: bool,
 ) -> NativeMaterialState {
     NativeMaterialState {
         liquid_glass_visible: liquid_glass_available && !reduce_transparency,
-        structural_material_visible: structural_fallback_available && !reduce_transparency,
+        structural_material_visible: structural_material_available && !reduce_transparency,
         reduce_transparency,
         increased_contrast,
     }
@@ -480,7 +417,7 @@ fn material_state(
 
 #[cfg(test)]
 mod tests {
-    use super::{GlassRect, renderer_space_rect, structural_corner_radius, toolbar_corner_radius};
+    use super::{GlassRect, renderer_space_rect, toolbar_corner_radius};
     use objc2_foundation::{NSPoint, NSRect, NSSize};
 
     #[test]
@@ -500,10 +437,8 @@ mod tests {
     }
 
     #[test]
-    fn structural_glass_uses_sidebar_and_inspector_shapes() {
+    fn toolbar_glass_uses_capsule_shapes() {
         assert_eq!(toolbar_corner_radius(0, 38.0), 19.0);
-        assert_eq!(structural_corner_radius(0, 600.0), 18.0);
-        assert_eq!(structural_corner_radius(1, 600.0), 0.0);
     }
 
     #[test]

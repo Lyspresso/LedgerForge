@@ -58,7 +58,9 @@ impl Default for AppPreferences {
 #[serde(default, rename_all = "camelCase")]
 pub struct AppState {
     pub schema_version: u32,
-    pub packs: Vec<StoredQuestionPack>,
+    /// Imported packs are immutable and shared so an autosave snapshot never
+    /// copies a multi-megabyte question bank on the UI thread.
+    pub packs: Vec<Arc<StoredQuestionPack>>,
     /// Attempts are keyed by their stable attempt id for deterministic serialization.
     pub attempts: BTreeMap<String, AttemptRecord>,
     pub preferences: AppPreferences,
@@ -78,9 +80,9 @@ impl Default for AppState {
 impl AppState {
     pub fn upsert_pack(&mut self, stored_pack: StoredQuestionPack) {
         if let Some(existing) = self.packs.iter_mut().find(|pack| pack.id == stored_pack.id) {
-            *existing = stored_pack;
+            *existing = Arc::new(stored_pack);
         } else {
-            self.packs.push(stored_pack);
+            self.packs.push(Arc::new(stored_pack));
         }
     }
 
@@ -441,6 +443,45 @@ mod tests {
         assert_eq!(store.load().unwrap(), state);
         let parent = store.path().parent().unwrap();
         let _ = fs::remove_dir_all(parent);
+    }
+
+    #[test]
+    fn legacy_nonempty_pack_json_remains_wire_compatible_with_shared_packs() {
+        let legacy_json = r#"{
+            "schemaVersion": 1,
+            "packs": [{
+                "id": "legacy-pack",
+                "sourcePath": null,
+                "importedAtUnixMs": 1,
+                "pack": {
+                    "version": 1,
+                    "title": "Legacy Pack",
+                    "questions": [{
+                        "id": "legacy-question",
+                        "title": "Legacy Question",
+                        "parts": []
+                    }]
+                }
+            }],
+            "attempts": {},
+            "preferences": {
+                "lastPackId": "legacy-pack",
+                "lastQuestionId": "legacy-question",
+                "autosaveAnswers": true,
+                "showAnswerAfterCheck": false
+            }
+        }"#;
+
+        let state: AppState = serde_json::from_str(legacy_json).unwrap();
+        assert_eq!(state.packs.len(), 1);
+        assert_eq!(state.packs[0].id, "legacy-pack");
+        assert_eq!(state.packs[0].pack.questions[0].id, "legacy-question");
+
+        let encoded = serde_json::to_value(&state).unwrap();
+        let stored_pack = &encoded["packs"][0];
+        assert!(stored_pack.is_object());
+        assert_eq!(stored_pack["id"], "legacy-pack");
+        assert_eq!(stored_pack["pack"]["title"], "Legacy Pack");
     }
 
     #[test]
