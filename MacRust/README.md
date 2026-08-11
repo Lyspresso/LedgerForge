@@ -97,6 +97,9 @@ remains supported.
   honest self-review for judgment work.
 - Editors for single choice, select-all, number, formula, short text, long text, journal entries,
   schedules/tables, matching, ordering, true/false corrections, and entry/no-entry rationales.
+- On macOS 26 and newer, the floating toolbar groups use Apple's public `NSGlassEffectView`
+  `Regular` material, batched by `NSGlassEffectContainerView`. macOS 11–25 use the semantic
+  `NSVisualEffectView` fallback, and Reduce Transparency automatically suppresses glass.
 - System light/dark appearance, AccessKit semantics, visible control labels, and local autosave.
 
 ## Keyboard shortcuts
@@ -139,7 +142,8 @@ MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release --locked
 ```
 
 After `cargo fetch --locked`, the Cargo commands can also use `--offline`. The standard public suite
-contains 53 tests: 33 library tests, 6 desktop tests, and 14 import/grading integration tests.
+contains 56 tests: 33 library tests, 9 desktop/native-material tests, and 14 import/grading
+integration tests.
 
 Two additional supplied-bank QA tests are ignored by default because their private source files are
 not part of this repository. Run either one explicitly with its required absolute path:
